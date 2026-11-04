@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $producto_id
  * @property int $cantidad
  * @property string|null $indicaciones
+ * @property-read Prescripcion $prescripcion
+ * @property-read Producto $producto
  */
 class PrescripcionItem extends Model
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\Negocio;
 use Carbon\CarbonInterface;
 use Database\Factories\LoteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $producto_id
  * @property string $codigo
  * @property Carbon $fecha_vencimiento
+ * @property-read Producto $producto
  */
 class Lote extends Model
 {
@@ -54,7 +56,7 @@ class Lote extends Model
      */
     public function estaVencido(CarbonInterface $hoy): bool
     {
-        $hoyNegocio = $hoy->copy()->setTimezone((string) config('farma.zona_horaria'))->toDateString();
+        $hoyNegocio = $hoy->copy()->setTimezone(Negocio::zonaHoraria())->toDateString();
 
         return $this->fecha_vencimiento->toDateString() <= $hoyNegocio;
     }

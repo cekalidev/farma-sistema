@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\Dominio\NoAutorizado;
 use App\Http\Requests\Catalogos\StoreBodegaRequest;
 use App\Http\Requests\Catalogos\StoreProductoRequest;
 use App\Models\Bodega;
 use App\Models\Producto;
 use App\Models\User;
+use App\Services\Catalogos\TraduceDuplicados;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
@@ -627,4 +630,40 @@ describe('BASE-AC4 código de catálogo duplicado en carrera', function () {
         'bodega (nombre)' => ['/api/v1/bodegas', Bodega::class, StoreBodegaRequest::class, ['codigo' => 'CARRERA3', 'nombre' => 'Bodega carrera nombre'], 'nombre'],
         'producto' => ['/api/v1/productos', Producto::class, StoreProductoRequest::class, ['codigo' => 'CARRERA2', 'nombre' => 'Producto carrera', 'unidad_medida' => 'tableta', 'control_especial' => false], 'codigo'],
     ]);
+
+    it('BASE-AC4: una violación de unicidad de una restricción no declarada no se disfraza de CODIGO_DUPLICADO: se relanza y no crea nada', function () {
+        $existente = Producto::factory()->create();
+        $servicio = new class
+        {
+            use TraduceDuplicados;
+
+            /** @param  array<string, string>  $restricciones */
+            public function insertar(Closure $insertar, array $restricciones): mixed
+            {
+                return $this->insertarSinDuplicados($insertar, $restricciones);
+            }
+        };
+
+        // Solo se declara la restricción de bodegas: la de productos no debe traducirse.
+        expect(fn () => $servicio->insertar(
+            fn () => Producto::query()->create(Producto::factory()->raw(['codigo' => $existente->codigo])),
+            ['bodegas_codigo_unique' => 'codigo'],
+        ))->toThrow(UniqueConstraintViolationException::class);
+
+        // La transacción exterior sigue utilizable y no hay fila nueva.
+        expect(Producto::query()->where('codigo', $existente->codigo)->count())->toBe(1);
+    });
+});
+
+describe('BASE-AC4 denegación decidida en un servicio', function () {
+    it('BASE-AC4: la excepción de dominio NoAutorizado responde 403 NO_AUTORIZADO con el mismo formato y mensaje que la policy', function () {
+        actuarComo('auditor');
+        Route::middleware('api')->get('/api/v1/prueba-no-autorizado', fn () => throw new NoAutorizado);
+
+        $respuesta = $this->getJson('/api/v1/prueba-no-autorizado');
+
+        esperarError($respuesta, 403, 'NO_AUTORIZADO');
+        expect($respuesta->json('error.mensaje'))->toBe('No tiene permiso para realizar esta acción.')
+            ->and($respuesta->json('error.detalles'))->toBe([]);
+    });
 });

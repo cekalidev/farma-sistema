@@ -7,4 +7,4 @@ parameters:
         - config/
         - database/
         - routes/
-    level: 6
+    level: 9

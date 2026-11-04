@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $bodega_id
  * @property int $producto_id
  * @property int $cantidad_minima
+ * @property-read Bodega $bodega
+ * @property-read Producto $producto
  */
 class StockMinimo extends Model
 {

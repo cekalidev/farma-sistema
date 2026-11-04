@@ -11,6 +11,7 @@ use App\Models\Prescripcion;
 use App\Models\PrescripcionItem;
 use App\Models\Producto;
 use App\Models\User;
+use App\Support\Negocio;
 use Illuminate\Database\Seeder;
 
 /**
@@ -51,7 +52,7 @@ class PacientesSeeder extends Seeder
 
     public function run(): void
     {
-        $hoy = now((string) config('farma.zona_horaria'))->startOfDay();
+        $hoy = Negocio::hoy();
         $medico = User::query()->porCorreo('medico@farma.test')->firstOrFail();
         $productos = Producto::query()->pluck('id', 'codigo');
 

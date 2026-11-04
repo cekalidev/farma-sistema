@@ -8,6 +8,7 @@ use App\Enums\EstadoPrescripcion;
 use App\Models\Paciente;
 use App\Models\Prescripcion;
 use App\Models\User;
+use App\Support\Negocio;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +23,7 @@ class PrescripcionFactory extends Factory
      */
     public function definition(): array
     {
-        $hoy = now((string) config('farma.zona_horaria'))->startOfDay();
+        $hoy = Negocio::hoy();
 
         return [
             'paciente_id' => Paciente::factory(),
@@ -42,7 +43,7 @@ class PrescripcionFactory extends Factory
     /** Venció ayer (S-05: con fecha = hoy sigue vigente). */
     public function vencida(): static
     {
-        $hoy = now((string) config('farma.zona_horaria'))->startOfDay();
+        $hoy = Negocio::hoy();
 
         return $this->state(fn (array $attributes) => [
             'fecha_emision' => $hoy->copy()->subDays(40)->toDateString(),

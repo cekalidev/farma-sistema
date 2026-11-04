@@ -9,6 +9,7 @@ use App\Models\Existencia;
 use App\Models\Lote;
 use App\Models\Producto;
 use App\Models\StockMinimo;
+use App\Support\Negocio;
 use Illuminate\Database\Seeder;
 
 /**
@@ -67,7 +68,7 @@ class InventarioSeeder extends Seeder
 
     public function run(): void
     {
-        $hoy = now((string) config('farma.zona_horaria'))->startOfDay();
+        $hoy = Negocio::hoy();
         $bodegas = Bodega::query()->pluck('id', 'codigo');
         $productos = Producto::query()->pluck('id', 'codigo');
 

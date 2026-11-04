@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EstadoPrescripcion;
+use App\Support\Negocio;
 use Carbon\CarbonInterface;
 use Database\Factories\PrescripcionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon $fecha_vencimiento
  * @property EstadoPrescripcion $estado
  * @property string|null $observaciones
+ * @property-read Paciente $paciente
+ * @property-read User $medico
  */
 class Prescripcion extends Model
 {
@@ -68,7 +71,7 @@ class Prescripcion extends Model
     /** S-05: vigente si está ACTIVA y hoy <= fecha_vencimiento (inclusiva). */
     public function estaVigente(CarbonInterface $hoy): bool
     {
-        $hoyNegocio = $hoy->copy()->setTimezone((string) config('farma.zona_horaria'))->toDateString();
+        $hoyNegocio = $hoy->copy()->setTimezone(Negocio::zonaHoraria())->toDateString();
 
         return $this->estado === EstadoPrescripcion::Activa
             && $hoyNegocio <= $this->fecha_vencimiento->toDateString();

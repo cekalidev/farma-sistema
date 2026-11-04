@@ -8,6 +8,7 @@ use App\Enums\Habilidad;
 use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -91,20 +92,20 @@ class AppServiceProvider extends ServiceProvider
             $ip = (string) $request->ip();
 
             return [
-                Limit::perMinute((int) config('farma.login_intentos_por_minuto', 5))
+                Limit::perMinute(Config::integer('farma.login_intentos_por_minuto', 5))
                     ->by('login:correo_ip:'.sha1($correo.'|'.$ip)),
-                Limit::perMinute((int) config('farma.login_intentos_por_correo_por_minuto', 10))
+                Limit::perMinute(Config::integer('farma.login_intentos_por_correo_por_minuto', 10))
                     ->by('login:correo:'.sha1($correo)),
-                Limit::perMinute((int) config('farma.login_intentos_por_ip_por_minuto', 20))
+                Limit::perMinute(Config::integer('farma.login_intentos_por_ip_por_minuto', 20))
                     ->by('login:ip:'.sha1($ip)),
             ];
         });
 
         // General de /api/v1 autenticado: por usuario; por IP si no hay usuario.
         RateLimiter::for('api', function (Request $request): Limit {
-            $usuarioId = $request->user()?->getAuthIdentifier();
+            $usuarioId = $request->user()?->id;
 
-            return Limit::perMinute((int) config('farma.api_peticiones_por_minuto', 60))
+            return Limit::perMinute(Config::integer('farma.api_peticiones_por_minuto', 60))
                 ->by($usuarioId !== null ? 'usuario:'.$usuarioId : 'ip:'.$request->ip());
         });
     }

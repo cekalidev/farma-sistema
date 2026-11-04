@@ -9,6 +9,7 @@ use App\Models\Existencia;
 use App\Models\Lote;
 use App\Models\Producto;
 use App\Models\User;
+use App\Support\Negocio;
 use Illuminate\Testing\TestResponse;
 
 /**
@@ -171,7 +172,7 @@ final class MatrizPermisos
                         'cantidad' => 25,
                         'lote' => [
                             'codigo' => 'L-MATRIZ-1',
-                            'fecha_vencimiento' => now((string) config('farma.zona_horaria'))->addDays(200)->toDateString(),
+                            'fecha_vencimiento' => Negocio::hoy()->addDays(200)->toDateString(),
                         ],
                     ],
                 ],

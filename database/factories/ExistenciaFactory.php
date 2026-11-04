@@ -26,7 +26,7 @@ class ExistenciaFactory extends Factory
         return [
             'bodega_id' => Bodega::factory(),
             'lote_id' => Lote::factory(),
-            'producto_id' => fn (array $attributes) => Lote::query()->findOrFail($attributes['lote_id'])->producto_id,
+            'producto_id' => fn (array $attributes) => Lote::query()->whereKey($attributes['lote_id'])->firstOrFail()->producto_id,
             'cantidad' => fake()->numberBetween(10, 200),
         ];
     }

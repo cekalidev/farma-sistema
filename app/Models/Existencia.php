@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $producto_id
  * @property int $lote_id
  * @property int $cantidad
+ * @property-read Bodega $bodega
+ * @property-read Producto $producto
+ * @property-read Lote $lote
  */
 class Existencia extends Model
 {

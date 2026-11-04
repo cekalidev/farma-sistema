@@ -7,6 +7,7 @@ namespace App\Http\Requests\Inventario;
 use App\Models\Existencia;
 use App\Providers\AppServiceProvider;
 use App\Services\Inventario\DatosEntrada;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -93,7 +94,7 @@ class StoreEntradaRequest extends FormRequest
         $validados = $this->validated();
 
         return new DatosEntrada(
-            usuarioId: (int) $this->user()?->getAuthIdentifier(),
+            usuarioId: $this->user()->id ?? throw new AuthenticationException,
             bodegaId: (int) $validados['bodega_id'],
             productoId: (int) $validados['producto_id'],
             cantidad: $validados['cantidad'],
