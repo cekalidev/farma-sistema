@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <!--
+            Configuración de pruebas versionada: no hace falta ningún .env.testing.
+            Lo que no se fija aquí (DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, APP_KEY) se lee
+            del .env local (copia de .env.example + `php artisan key:generate`).
+            force="true" hace que estos valores ganen a cualquier variable de entorno o archivo
+            .env/.env.testing, para que la suite (migrate:fresh) nunca toque la BD de desarrollo.
+        -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="pgsql" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DB_DATABASE" value="farma_test" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Límite general de /api/v1 alto en tests; el test BASE-AC4 de 429 lo baja vía config. -->
+        <env name="FARMA_API_PETICIONES_POR_MINUTO" value="1000" force="true"/>
+    </php>
+</phpunit>
