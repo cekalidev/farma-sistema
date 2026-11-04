@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Concerns;
 
 use App\Models\Bodega;
+use App\Models\Existencia;
+use App\Models\Lote;
 use App\Models\Producto;
 use App\Models\User;
 use Illuminate\Testing\TestResponse;
@@ -137,6 +139,54 @@ final class MatrizPermisos
                 'verificar' => function (TestResponse $r, mixed $antes): void {
                     $r->assertOk();
                     expect(cuerpoDatos($r)['id'] ?? null)->toBe(Producto::query()->sole()->id);
+                },
+            ],
+
+            // --- RN-01: inventario (consultar: auxiliar, regente, auditor; entradas: regente, S-17)
+            'GET /api/v1/inventario' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $bodega = Bodega::factory()->create();
+                    Existencia::factory()->count(2)->create(['bodega_id' => $bodega->id]);
+                    Existencia::factory()->create(); // otra bodega: el filtro la excluye
+
+                    return ['uri' => '/api/v1/inventario?bodega_id='.$bodega->id];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): array => [Existencia::query()->count(), (int) Existencia::query()->sum('cantidad')],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toBeArray()->toHaveCount(2)
+                        ->and($r->json('data.0'))->toHaveKeys(['lote.codigo', 'fecha_vencimiento', 'cantidad', 'vencido'])
+                        ->and(Existencia::query()->count())->toBe($antes[0]);
+                },
+            ],
+            'POST /api/v1/inventario/entradas' => [
+                'metodo' => 'POST',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/inventario/entradas',
+                    'cuerpo' => [
+                        'bodega_id' => Bodega::factory()->create()->id,
+                        'producto_id' => Producto::factory()->create()->id,
+                        'cantidad' => 25,
+                        'lote' => [
+                            'codigo' => 'L-MATRIZ-1',
+                            'fecha_vencimiento' => now((string) config('farma.zona_horaria'))->addDays(200)->toDateString(),
+                        ],
+                    ],
+                ],
+                'permitidos' => ['regente_farmacia'],
+                'instantanea' => fn (): array => [
+                    Lote::query()->count(),
+                    Existencia::query()->count(),
+                    (int) Existencia::query()->sum('cantidad'),
+                ],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertCreated();
+                    expect(cuerpoDatos($r)['cantidad'] ?? null)->toBe(25)
+                        ->and(Lote::query()->count())->toBe($antes[0] + 1)
+                        ->and(Existencia::query()->count())->toBe($antes[1] + 1)
+                        ->and((int) Existencia::query()->sum('cantidad'))->toBe($antes[2] + 25);
                 },
             ],
 

@@ -22,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public const PATRON_ID = '[1-9][0-9]{0,17}';
 
+    /** Mayor id que admite PATRON_ID: tope de las reglas `max:` de ids en query y cuerpo. */
+    public const ID_MAXIMO = 999_999_999_999_999_999;
+
     /**
      * Parámetros de ruta que son ids de modelo. Toda RN que añada un parámetro lo registra aquí;
      * el test BASE-AC4 "todo parámetro de ruta de /api/v1 restringe su formato" falla si falta.

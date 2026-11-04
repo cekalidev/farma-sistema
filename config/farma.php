@@ -1,8 +1,9 @@
 <?php
 
 return [
-    // Zona horaria de negocio: "hoy" = now(zona)->toDateString() (S-01, S-05).
-    'zona_horaria' => env('APP_TIMEZONE', 'America/Bogota'),
+    // Zona horaria de negocio: "hoy" = now(zona)->toDateString() (S-01, S-05). Independiente de
+    // APP_TIMEZONE para que cambiar la zona de la app no mueva la frontera de vencimiento.
+    'zona_horaria' => env('FARMA_ZONA_HORARIA', 'America/Bogota'),
 
     // RN-11: umbral de alerta de vencimiento en días.
     'dias_alerta_vencimiento' => (int) env('FARMA_DIAS_ALERTA_VENCIMIENTO', 90),
