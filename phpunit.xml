@@ -36,9 +36,6 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <env name="SESSION_DRIVER" value="array" force="true"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
         <!-- Límite general de /api/v1 alto en tests; el test BASE-AC4 de 429 lo baja vía config. -->
         <env name="FARMA_API_PETICIONES_POR_MINUTO" value="1000" force="true"/>
     </php>

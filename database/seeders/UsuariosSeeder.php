@@ -44,7 +44,6 @@ class UsuariosSeeder extends Seeder
                     'password' => self::PASSWORD_DESARROLLO,
                     'rol' => $rol,
                 ])
-                ->forceFill(['email_verified_at' => now()])
                 ->save();
         }
     }
