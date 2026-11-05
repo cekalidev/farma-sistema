@@ -46,9 +46,9 @@ return new class extends Migration
         $checks = [
             'estado_check' => "estado IN ('BORRADOR', 'SOLICITADO', 'APROBADO', 'EN_TRANSITO', 'RECIBIDO', 'RECIBIDO_PARCIAL', 'ANULADO')",
             'bodegas_distintas_check' => 'bodega_origen_id <> bodega_destino_id',
-            // S-08 / RN-08: solo el creador solicita, así que solicitante = creador.
+            // S-08: solo el creador solicita, así que solicitante = creador (RN-08 añade aprobador ≠
+            // solicitante en 2026_11_10_000000_add_segregacion_check_to_traslados_table).
             'solicitante_creador_check' => 'solicitado_por_id IS NULL OR solicitado_por_id = creado_por_id',
-            // RN-08: aquí irá CHECK (aprobado_por_id IS NULL OR aprobado_por_id <> solicitado_por_id).
             'solicitud_completa_check' => '(solicitado_por_id IS NULL) = (solicitado_en IS NULL)',
             'aprobacion_completa_check' => '(aprobado_por_id IS NULL) = (aprobado_en IS NULL)',
             'despacho_completo_check' => '(despachado_por_id IS NULL) = (despachado_en IS NULL)',

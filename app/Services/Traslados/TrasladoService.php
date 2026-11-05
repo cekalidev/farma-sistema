@@ -9,6 +9,7 @@ use App\Enums\Habilidad;
 use App\Enums\TrasladoEstado;
 use App\Exceptions\Dominio\LoteVencido;
 use App\Exceptions\Dominio\NoAutorizado;
+use App\Exceptions\Dominio\SegregacionFunciones;
 use App\Exceptions\Dominio\TransicionInvalida;
 use App\Models\Bodega;
 use App\Models\Lote;
@@ -124,18 +125,23 @@ final class TrasladoService
     }
 
     /**
-     * Regente (Policy traslado.aprobar).
+     * Regente (Policy traslado.aprobar). RN-08-AC1: el aprobador no puede ser el solicitante → 403
+     * SEGREGACION_FUNCIONES. La Policy ya lo exige; se repite aquí sobre la fila bloqueada y antes
+     * del estado (403 antes que 409, S-57). La BD lo respalda con CHECK (RN-08-AC5).
      *
+     * @throws SegregacionFunciones
      * @throws TransicionInvalida
      */
     public function aprobar(Traslado $traslado, int $usuarioId): Traslado
     {
-        // RN-08: aquí irá la segregación (aprobador ≠ solicitante → 403 SEGREGACION_FUNCIONES),
-        // comprobada antes del estado (403 antes que 409) y repetida sobre la fila bloqueada.
         return $this->transicionar($traslado, AccionTraslado::Aprobar, [
             'aprobado_por_id' => $usuarioId,
             'aprobado_en' => now(),
-        ]);
+        ], static function (Traslado $bloqueado) use ($usuarioId): void {
+            if ($bloqueado->solicitado_por_id === $usuarioId) {
+                throw SegregacionFunciones::paraTraslado($bloqueado->id, SegregacionFunciones::ACCION_APROBAR);
+            }
+        });
     }
 
     /**
@@ -174,13 +180,14 @@ final class TrasladoService
 
     /**
      * @param  array<string, mixed>  $columnas
+     * @param  (\Closure(Traslado): void)|null  $antesDelEstado  comprobación sobre la fila bloqueada, previa al 409
      *
      * @throws TransicionInvalida
      */
-    private function transicionar(Traslado $traslado, AccionTraslado $accion, array $columnas): Traslado
+    private function transicionar(Traslado $traslado, AccionTraslado $accion, array $columnas, ?\Closure $antesDelEstado = null): Traslado
     {
-        $actualizado = DB::transaction(function () use ($traslado, $accion, $columnas): Traslado {
-            $bloqueado = $this->bloqueo->bloquear($traslado, $accion);
+        $actualizado = DB::transaction(function () use ($traslado, $accion, $columnas, $antesDelEstado): Traslado {
+            $bloqueado = $this->bloqueo->bloquear($traslado, $accion, $antesDelEstado);
 
             $bloqueado->forceFill(['estado' => $bloqueado->estado->tras($accion), ...$columnas])->save();
 

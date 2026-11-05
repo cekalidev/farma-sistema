@@ -8,6 +8,7 @@ use App\Enums\EstadoDiscrepancia;
 use App\Enums\TipoMovimiento;
 use App\Enums\TipoResolucionDiscrepancia;
 use App\Exceptions\Dominio\CantidadExcedeMaximo;
+use App\Exceptions\Dominio\SegregacionFunciones;
 use App\Exceptions\Dominio\TransicionInvalida;
 use App\Models\Discrepancia;
 use App\Models\Existencia;
@@ -24,6 +25,10 @@ use Illuminate\Support\Facades\DB;
  *    discrepancia guarda el id del movimiento. Se admite aunque el lote esté vencido o la bodega
  *    inactiva (S-34: es una corrección).
  *
+ * S-71 (segregación de RN-08): quien solicitó el traslado no resuelve sus discrepancias → 403
+ * SEGREGACION_FUNCIONES, antes del 409 del estado (S-57). La Policy ya lo exige; se repite aquí
+ * con la discrepancia bloqueada. Sin CHECK en la BD: cruza discrepancias y traslados.
+ *
  * Orden de bloqueo: discrepancia (FOR UPDATE; dos resoluciones simultáneas se serializan aquí y la
  * segunda responde 409 TRANSICION_INVALIDA) → existencia (INSERT ON CONFLICT DO NOTHING + FOR
  * UPDATE). El traslado no se bloquea: está en RECIBIDO_PARCIAL, que es final.
@@ -39,6 +44,7 @@ final class ResolucionDiscrepancia
     public function __construct(private readonly RegistradorKardex $kardex) {}
 
     /**
+     * @throws SegregacionFunciones
      * @throws TransicionInvalida
      * @throws CantidadExcedeMaximo
      */
@@ -47,13 +53,15 @@ final class ResolucionDiscrepancia
         $resuelta = DB::transaction(function () use ($discrepancia, $usuarioId, $tipo, $motivo): Discrepancia {
             $bloqueada = Discrepancia::query()->whereKey($discrepancia->id)->lockForUpdate()->firstOrFail();
 
+            $item = TrasladoItem::query()->with('traslado')->findOrFail($bloqueada->traslado_item_id);
+
+            if ($item->traslado->solicitado_por_id === $usuarioId) {
+                throw SegregacionFunciones::paraTraslado($item->traslado_id, SegregacionFunciones::ACCION_RESOLVER_DISCREPANCIA);
+            }
+
             if ($bloqueada->estado !== EstadoDiscrepancia::Pendiente) {
                 throw TransicionInvalida::paraDiscrepancia($bloqueada);
             }
-
-            // RN-08: si se exige que quien resuelve no sea el solicitante del traslado, va aquí.
-
-            $item = TrasladoItem::query()->with('traslado')->findOrFail($bloqueada->traslado_item_id);
 
             $movimientoId = null;
             if ($tipo !== TipoResolucionDiscrepancia::Perdida) {

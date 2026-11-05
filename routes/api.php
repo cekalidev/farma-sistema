@@ -55,7 +55,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // RN-07 traslados: consultar (auxiliar, regente, auditor); crear/despachar/recibir con
         // traslado.operar; editar ítems y solicitar solo el creador (S-08); aprobar con
-        // traslado.aprobar (RN-08 añade la segregación); anular el creador o un regente.
+        // traslado.aprobar y no ser el solicitante (RN-08); anular el creador o un regente.
         Route::get('traslados', [TrasladoController::class, 'index'])->can('viewAny', Traslado::class)->name('traslados.index');
         Route::post('traslados', [TrasladoController::class, 'store'])->can('create', Traslado::class)->name('traslados.store');
         Route::get('traslados/{traslado}', [TrasladoController::class, 'show'])->can('view', 'traslado')->name('traslados.show');
@@ -66,7 +66,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('traslados/{traslado}/recibir', [TrasladoController::class, 'recibir'])->can('recibir', 'traslado')->name('traslados.recibir');
         Route::post('traslados/{traslado}/anular', [TrasladoController::class, 'anular'])->can('anular', 'traslado')->name('traslados.anular');
 
-        // RN-07-AC12: resolver discrepancias con traslado.aprobar (regente).
+        // RN-07-AC12: resolver discrepancias con traslado.aprobar (regente) que no solicitó el traslado (S-71).
         Route::post('discrepancias/{discrepancia}/resolver', [DiscrepanciaController::class, 'resolver'])->can('resolver', 'discrepancia')->name('discrepancias.resolver');
     });
 });
