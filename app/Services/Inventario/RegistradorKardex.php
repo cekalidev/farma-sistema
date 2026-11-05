@@ -28,11 +28,17 @@ final class RegistradorKardex
     /** Máximo de `existencias.cantidad` y de los saldos del kardex (integer de PostgreSQL). */
     public const SALDO_MAXIMO = 2_147_483_647;
 
-    /** Longitud de `movimientos_kardex.motivo`. */
+    /**
+     * Longitud de `movimientos_kardex.motivo`. Acota también `dispensaciones.motivo_rechazo
+     * varchar(500)` (RN-05-AC8, RechazarDispensacionRequest): si cambia, revisa ambas columnas.
+     */
     public const MOTIVO_MAXIMO = 500;
 
-    /** Longitud mínima del motivo de un ajuste (RN-06-AC6), sin espacios en los extremos. */
+    /** Longitud mínima del motivo de un ajuste (RN-06-AC6) o de un rechazo, sin espacios en los extremos. */
     public const MOTIVO_MINIMO = 10;
+
+    /** Motivo sin Cc/Cf/Zl/Zp (S-33): ajustes (StoreAjusteRequest) y rechazo de dispensación (RN-05-AC8). */
+    public const REGEX_MOTIVO = '/^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+$/u';
 
     /**
      * Aplica `cantidad` (con signo) a la existencia y registra el movimiento.

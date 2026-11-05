@@ -16,9 +16,11 @@ use Illuminate\Support\Facades\DB;
  * = cantidad prescrita − Σ dispensacion_items.cantidad del ítem en dispensaciones CONFIRMADA y
  *   PENDIENTE_AUTORIZACION (RN-04-AC5, AC9); RECHAZADA no cuenta (S-06).
  *
- * Toca la BD, así que vive en tests/Feature (reglas de tests). Las dispensaciones se insertan por
- * SQL en el estado deseado respetando los CHECK de la tabla (RN-05 aún no existe); aquí solo se
- * prueba el cálculo, no el movimiento de stock (eso está en RN04PrescripcionTopeTest).
+ * Toca la BD, así que vive en tests/Feature (reglas de tests). Es el unitario de la función
+ * crítica: las dispensaciones se insertan por SQL en el estado deseado respetando los CHECK de la
+ * tabla, para combinar estados libremente; aquí solo se prueba el cálculo, no el movimiento de
+ * stock. El flujo real de RN-04-AC9 (pendiente creada por POST y rechazada o autorizada por sus
+ * endpoints de RN-05) está en RN04PrescripcionTopeTest y RN05ControlEspecialTest.
  */
 
 /*

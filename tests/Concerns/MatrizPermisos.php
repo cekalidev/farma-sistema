@@ -14,6 +14,11 @@ use App\Models\MovimientoKardex;
 use App\Models\PrescripcionItem;
 use App\Models\Producto;
 use App\Models\User;
+use App\Services\Dispensacion\ClaveIdempotencia;
+use App\Services\Dispensacion\DatosDispensacion;
+use App\Services\Dispensacion\DispensacionService;
+use App\Services\Dispensacion\ItemSolicitado;
+use App\Services\Dispensacion\RespuestaIdempotente;
 use App\Services\Inventario\RegistradorKardex;
 use App\Support\Negocio;
 use Illuminate\Support\Facades\DB;
@@ -314,6 +319,44 @@ final class MatrizPermisos
                 },
             ],
 
+            // --- RN-05: autorizar / rechazar control especial (dispensacion.autorizar: regente) ---
+            // La pendiente la crea un auxiliar, así que el regente de la matriz es el "segundo".
+            'POST /api/v1/dispensaciones/{id}/autorizar' => [
+                'metodo' => 'POST',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/dispensaciones/'.self::dispensacionPendiente(20, 3)->id.'/autorizar',
+                ],
+                'permitidos' => ['regente_farmacia'],
+                'instantanea' => fn (): array => self::estadoDispensaciones(),
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    $datos = cuerpoDatos($r);
+                    expect($datos['estado'] ?? null)->toBe('CONFIRMADA')
+                        ->and($datos['autorizado_por_id'] ?? null)->toBe($usuario->id)
+                        ->and($r->json('data.detalles'))->toHaveCount(1)
+                        ->and($r->json('data.detalles.0.movimiento.tipo'))->toBe('SALIDA_DISPENSACION')
+                        ->and(MovimientoKardex::query()->count())->toBe($antes[1] + 1)
+                        ->and((int) Existencia::query()->sum('cantidad'))->toBe($antes[2] - 3);
+                },
+            ],
+            'POST /api/v1/dispensaciones/{id}/rechazar' => [
+                'metodo' => 'POST',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/dispensaciones/'.self::dispensacionPendiente(20, 3)->id.'/rechazar',
+                    'cuerpo' => ['motivo' => 'Prescripción ilegible en la matriz'],
+                ],
+                'permitidos' => ['regente_farmacia'],
+                'instantanea' => fn (): array => self::estadoDispensaciones(),
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    $datos = cuerpoDatos($r);
+                    expect($datos['estado'] ?? null)->toBe('RECHAZADA')
+                        ->and($datos['rechazado_por_id'] ?? null)->toBe($usuario->id)
+                        ->and(MovimientoKardex::query()->count())->toBe($antes[1])
+                        ->and((int) Existencia::query()->sum('cantidad'))->toBe($antes[2]);
+                },
+            ],
+
             // --- RN-xx: añadir aquí los endpoints de cada RN siguiente ------------------------
         ];
     }
@@ -351,6 +394,42 @@ final class MatrizPermisos
             'prescripcion_id' => $item->prescripcion_id,
             'bodega_id' => $existencia->bodega_id,
             'items' => [['prescripcion_item_id' => $item->id, 'cantidad' => $cantidad]],
+        ];
+    }
+
+    /**
+     * RN-05: dispensación PENDIENTE_AUTORIZACION de un producto de control especial con `stock`
+     * unidades, creada por un auxiliar por el camino real (DispensacionService) sin mover stock.
+     */
+    private static function dispensacionPendiente(int $stock, int $cantidad): Dispensacion
+    {
+        $existencia = self::existenciaConKardex($stock);
+        Producto::query()->whereKey($existencia->producto_id)->update(['control_especial' => true]);
+        $item = PrescripcionItem::factory()->create(['producto_id' => $existencia->producto_id, 'cantidad' => 30]);
+        $auxiliar = User::factory()->create(['rol' => Rol::AuxiliarFarmacia]);
+
+        app(DispensacionService::class)->crear(
+            new DatosDispensacion(
+                usuarioId: $auxiliar->id,
+                pacienteId: $item->prescripcion->paciente_id,
+                prescripcionId: $item->prescripcion_id,
+                bodegaId: $existencia->bodega_id,
+                items: [new ItemSolicitado($item->id, $cantidad)],
+            ),
+            new ClaveIdempotencia('matriz-rn05', str_repeat('0', 64)),
+            fn (Dispensacion $d): RespuestaIdempotente => new RespuestaIdempotente(201, '{}'),
+        );
+
+        return Dispensacion::query()->where('dispensado_por_id', $auxiliar->id)->sole();
+    }
+
+    /** @return array{0: list<string>, 1: int, 2: int} estados, movimientos de kardex y stock total */
+    private static function estadoDispensaciones(): array
+    {
+        return [
+            Dispensacion::query()->orderBy('id')->pluck('estado')->map(fn ($e): string => $e->value)->all(),
+            MovimientoKardex::query()->count(),
+            (int) Existencia::query()->sum('cantidad'),
         ];
     }
 

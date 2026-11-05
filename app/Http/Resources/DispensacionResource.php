@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Dispensación (RN-02): cabecera, ítems solicitados y tramos FEFO por lote (`detalles`, en orden de
+ * Dispensación (RN-02; RN-05: estado y datos de autorización o rechazo): cabecera, ítems solicitados y tramos FEFO por lote (`detalles`, en orden de
  * descuento), cada uno con su movimiento SALIDA_DISPENSACION. Del paciente solo el id (RN-10).
  *
  * @mixin Dispensacion
@@ -32,6 +32,9 @@ class DispensacionResource extends JsonResource
             'dispensado_por_id' => $this->dispensado_por_id,
             'autorizado_por_id' => $this->autorizado_por_id,
             'autorizado_en' => $this->autorizado_en?->toIso8601String(),
+            'rechazado_por_id' => $this->rechazado_por_id,
+            'rechazado_en' => $this->rechazado_en?->toIso8601String(),
+            'motivo_rechazo' => $this->motivo_rechazo,
             'items' => $this->whenLoaded('items', fn (): array => $this->items->map(fn (DispensacionItem $item): array => [
                 'id' => $item->id,
                 'prescripcion_item_id' => $item->prescripcion_item_id,

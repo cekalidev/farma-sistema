@@ -45,5 +45,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // RN-02 dispensación FEFO: dispensacion.crear (auxiliar, regente). Previsualizar no cambia stock ni kardex.
         Route::post('dispensaciones/previsualizar', [DispensacionController::class, 'previsualizar'])->can('create', Dispensacion::class)->name('dispensaciones.previsualizar');
         Route::post('dispensaciones', [DispensacionController::class, 'store'])->can('create', Dispensacion::class)->name('dispensaciones.store');
+
+        // RN-05 control especial: dispensacion.autorizar (regente) y distinto de quien la creó (Policy + servicio).
+        Route::post('dispensaciones/{dispensacion}/autorizar', [DispensacionController::class, 'autorizar'])->can('autorizar', 'dispensacion')->name('dispensaciones.autorizar');
+        Route::post('dispensaciones/{dispensacion}/rechazar', [DispensacionController::class, 'rechazar'])->can('rechazar', 'dispensacion')->name('dispensaciones.rechazar');
     });
 });

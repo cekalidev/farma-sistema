@@ -44,7 +44,7 @@ class StoreAjusteRequest extends FormRequest
                 'string',
                 'min:'.RegistradorKardex::MOTIVO_MINIMO,
                 'max:'.RegistradorKardex::MOTIVO_MAXIMO,
-                'regex:/^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+$/u',
+                'regex:'.RegistradorKardex::REGEX_MOTIVO,
             ],
         ];
     }

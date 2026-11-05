@@ -17,6 +17,7 @@ use App\Models\DispensacionItem;
 use App\Models\Existencia;
 use App\Models\Prescripcion;
 use App\Models\PrescripcionItem;
+use App\Models\Producto;
 use App\Services\Inventario\ConsultaKardexService;
 use App\Support\Negocio;
 use Carbon\CarbonInterface;
@@ -44,7 +45,11 @@ use Illuminate\Validation\ValidationException;
  *  2. prescripcion_items afectados, FOR UPDATE por id ascendente (tope, RN-04-AC8);
  *  3. existencias de la bodega, FOR UPDATE por id ascendente (SalidaStock, RN-03).
  *
- * Pendiente (marcado "RN-05:" abajo): control especial → PENDIENTE_AUTORIZACION sin mover stock (S-06).
+ * RN-05 (S-06): si algún producto es de control especial (ControlEspecial::requiereAutorizacion)
+ * la dispensación nace PENDIENTE_AUTORIZACION con sus dispensacion_items (cuentan para el tope,
+ * RN-04-AC9) pero sin SalidaStock ni kardex; solo se comprueba que el stock vigente alcanza en
+ * ese momento (S-61, SalidaStock::comprobar, sin reservar). La salida FEFO la hace
+ * AutorizacionDispensacion al autorizar. La respuesta 201 (estado pendiente) se guarda igual para la idempotencia (S-52).
  */
 final class DispensacionService
 {
@@ -91,7 +96,7 @@ final class DispensacionService
         }
 
         // S-46 solo para una dispensación nueva: el reintento ya se resolvió arriba (S-52).
-        $this->exigirBodegaActiva($datos->bodegaId);
+        self::exigirBodegaActiva($datos->bodegaId);
 
         $hoy = Negocio::hoy();
 
@@ -101,8 +106,12 @@ final class DispensacionService
                 // compuestas darían 500 en vez de 422) y la vigencia (S-05).
                 $prescritos = $this->itemsPrescritos($datos, $hoy);
 
-                // RN-05: aquí irá requiereAutorizacion(items): si algún producto es de control especial,
-                // la dispensación nace PENDIENTE_AUTORIZACION y NO se llama a SalidaStock (S-06).
+                // RN-05 (S-06): con algún producto de control especial la dispensación entera nace
+                // PENDIENTE_AUTORIZACION y no mueve stock hasta que la autorice otro regente.
+                $requiereAutorizacion = ControlEspecial::requiereAutorizacion(array_map(
+                    static fn (PrescripcionItem $p): Producto => $p->producto,
+                    array_values($prescritos),
+                ));
 
                 // Idempotencia (RN-09-AC6): primera escritura, antes de cualquier bloqueo.
                 $dispensacion = new Dispensacion;
@@ -111,7 +120,9 @@ final class DispensacionService
                     'prescripcion_id' => $datos->prescripcionId,
                     'bodega_id' => $datos->bodegaId,
                     'dispensado_por_id' => $datos->usuarioId,
-                    'estado' => EstadoDispensacion::Confirmada,
+                    'estado' => $requiereAutorizacion
+                        ? EstadoDispensacion::PendienteAutorizacion
+                        : EstadoDispensacion::Confirmada,
                     'idempotency_key' => $clave->clave,
                     'request_hash' => $clave->hash,
                 ])->save();
@@ -143,11 +154,18 @@ final class DispensacionService
                     ])->save();
                 }
 
-                $this->salida->descontar($dispensacion, $datos->usuarioId, $hoy);
+                // RN-05-AC2: la pendiente no descuenta stock ni escribe kardex (sin reserva, S-06),
+                // pero S-61 exige que el stock vigente alcance ahora (409 y rollback si no; la clave
+                // queda libre, S-11). Va tras el tope (S-54) y lee sin bloquear existencias.
+                if ($requiereAutorizacion) {
+                    $this->salida->comprobar($dispensacion, $hoy);
+                } else {
+                    $this->salida->descontar($dispensacion, $datos->usuarioId, $hoy);
+                }
 
                 // La respuesta se guarda en la misma transacción: nunca hay una dispensación con
                 // clave confirmada cuya respuesta no se pueda reproducir.
-                $respuesta = $responder($this->cargar($dispensacion));
+                $respuesta = $responder($dispensacion->load(self::relacionesRespuesta()));
                 $dispensacion->forceFill([
                     'respuesta_status' => $respuesta->status,
                     'respuesta_cuerpo' => $respuesta->cuerpo,
@@ -176,7 +194,7 @@ final class DispensacionService
      */
     public function previsualizar(DatosDispensacion $datos): Previsualizacion
     {
-        $this->exigirBodegaActiva($datos->bodegaId);
+        self::exigirBodegaActiva($datos->bodegaId);
 
         $hoy = Negocio::hoy();
         $prescritos = $this->itemsPrescritos($datos, $hoy);
@@ -285,11 +303,11 @@ final class DispensacionService
     /**
      * S-46: no se dispensa (ni se previsualiza) desde una bodega inactiva → 422 VALIDACION con
      * bodega_id en detalles.campos, el mismo formato que un fallo del Form Request. Que exista ya
-     * lo validó el Form Request.
+     * lo validó el Form Request. También la usa AutorizacionDispensacion al autorizar una pendiente.
      *
      * @throws ValidationException
      */
-    private function exigirBodegaActiva(int $bodegaId): void
+    public static function exigirBodegaActiva(int $bodegaId): void
     {
         if (! Bodega::query()->whereKey($bodegaId)->where('activa', true)->exists()) {
             throw ValidationException::withMessages(['bodega_id' => self::MENSAJE_BODEGA_NO_DISPONIBLE]);
@@ -323,19 +341,24 @@ final class DispensacionService
         return new RespuestaIdempotente($previa->respuesta_status, $previa->respuesta_cuerpo, reproducida: true);
     }
 
-    /** Relaciones que muestra DispensacionResource (columnas mínimas, sin N+1). */
-    private function cargar(Dispensacion $dispensacion): Dispensacion
+    /**
+     * Relaciones que muestra DispensacionResource (columnas mínimas, sin N+1). También las usa
+     * AutorizacionDispensacion para responder al autorizar o rechazar.
+     *
+     * @return list<string>
+     */
+    public static function relacionesRespuesta(): array
     {
         $kardex = [];
         foreach (ConsultaKardexService::RELACIONES as $relacion) {
             $kardex[] = 'detalles.movimiento.'.$relacion;
         }
 
-        return $dispensacion->load([
+        return [
             'items.producto:id,codigo,nombre,control_especial',
             'detalles.item:id,prescripcion_item_id',
             'detalles.lote:id,producto_id,codigo,fecha_vencimiento',
             ...$kardex,
-        ]);
+        ];
     }
 }

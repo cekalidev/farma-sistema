@@ -15,6 +15,7 @@ use App\Services\Inventario\RegistradorKardex;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Laravel\Sanctum\Sanctum;
 
 /*
  * RN-04 — Paciente, prescripción vigente y tope acumulado (AC1..AC7, AC9..AC11). AC8 (tope bajo
@@ -35,8 +36,12 @@ use Illuminate\Testing\TestResponse;
  * detalles.pendiente (prescrito − CONFIRMADA − PENDIENTE_AUTORIZACION) y detalles.solicitado.
  *
  * El stock se crea por el camino real del kardex (RegistradorKardex, ENTRADA con la existencia
- * bloqueada) para que la cadena de saldos cuadre (RN-06-AC2). Las dispensaciones en estado
- * PENDIENTE_AUTORIZACION / RECHAZADA (RN-05 aún no existe) se insertan por SQL respetando los CHECK.
+ * bloqueada) para que la cadena de saldos cuadre (RN-06-AC2).
+ *
+ * RN-04-AC9 se prueba por el flujo real de RN-05 (crear la pendiente por POST /dispensaciones y
+ * rechazarla o autorizarla por sus endpoints; también en RN05ControlEspecialTest). Además, unas
+ * pruebas del cálculo preparan los estados PENDIENTE_AUTORIZACION / RECHAZADA por SQL (respetando
+ * los CHECK) para combinarlos libremente sobre un producto sin control especial.
  */
 
 const RN04_URI = '/api/v1/dispensaciones';
@@ -106,6 +111,27 @@ function rn04Escenario(int $prescrito = 10, int $stock = 20, array $prescripcion
     $producto = Producto::factory()->create();
     $existencia = rn04Stock($bodega, $producto, $stock);
     $prescripcion = Prescripcion::factory()->create($prescripcion);
+    $item = PrescripcionItem::factory()->create([
+        'prescripcion_id' => $prescripcion->id,
+        'producto_id' => $producto->id,
+        'cantidad' => $prescrito,
+    ]);
+
+    return compact('bodega', 'producto', 'existencia', 'prescripcion', 'item');
+}
+
+/**
+ * Como rn04Escenario() pero con un producto de control especial (RN-05): toda dispensación del
+ * ítem nace PENDIENTE_AUTORIZACION y necesita a un segundo regente.
+ *
+ * @return array{bodega: Bodega, producto: Producto, existencia: Existencia, prescripcion: Prescripcion, item: PrescripcionItem}
+ */
+function rn04EscenarioControl(int $prescrito = 10, int $stock = 20): array
+{
+    $bodega = Bodega::factory()->create();
+    $producto = Producto::factory()->controlEspecial()->create();
+    $existencia = rn04Stock($bodega, $producto, $stock);
+    $prescripcion = Prescripcion::factory()->create();
     $item = PrescripcionItem::factory()->create([
         'prescripcion_id' => $prescripcion->id,
         'producto_id' => $producto->id,
@@ -255,9 +281,10 @@ function rn04Confirmado(PrescripcionItem $item): int
 }
 
 /**
- * Dispensación creada por SQL en un estado de RN-05 (que aún no existe), respetando los CHECK:
- * PENDIENTE_AUTORIZACION sin autorizador ni rechazo; RECHAZADA con rechazador distinto del
- * dispensador, fecha y motivo. Nunca mueve stock (S-06).
+ * Estado preparado por SQL para las pruebas del cálculo (RN-04-AC9 con estados preparados),
+ * respetando los CHECK: PENDIENTE_AUTORIZACION sin autorizador ni rechazo; RECHAZADA con
+ * rechazador distinto del dispensador, fecha y motivo. Nunca mueve stock (S-06). El flujo real
+ * (POST /dispensaciones + /rechazar|/autorizar) lo prueban los tests "RN-04-AC9: flujo real".
  *
  * @param  array<string, mixed>  $s
  */
@@ -297,7 +324,10 @@ function rn04DispensacionEnEstado(array $s, PrescripcionItem $item, int $cantida
     return $id;
 }
 
-/** Pasa una dispensación PENDIENTE_AUTORIZACION a RECHAZADA (lo que hará RN-05). */
+/**
+ * Pasa por SQL una PENDIENTE_AUTORIZACION preparada a RECHAZADA, sin pasar por
+ * POST /dispensaciones/{id}/rechazar (solo para las pruebas del cálculo con estados preparados).
+ */
 function rn04Rechazar(int $dispensacionId): void
 {
     $actualizadas = DB::table('dispensaciones')->where('id', $dispensacionId)->where('estado', 'PENDIENTE_AUTORIZACION')->update([
@@ -876,10 +906,77 @@ describe('RN-04-AC7 cantidad inválida', function () {
 |--------------------------------------------------------------------------
 */
 
-describe('RN-04-AC9 pendientes de autorización y rechazadas', function () {
+describe('RN-04-AC9 pendientes de autorización y rechazadas (flujo real RN-05)', function () {
     beforeEach(fn () => rn04Congelar());
 
-    it('RN-04-AC9: con una PENDIENTE_AUTORIZACION de 3 sobre un ítem de 10, pedir 8 → 422 con pendiente 7; tras RECHAZARLA, 8 → 201', function () {
+    it('RN-04-AC9: flujo real: un auxiliar crea por POST una de 3 sobre un ítem de control especial de 10 (PENDIENTE); pedir 8 → 422 pendiente 7 sin cambios (también al previsualizar); un regente distinto la rechaza por /rechazar; pedir 10 → 201', function () {
+        $s = rn04EscenarioControl();
+        $auxiliar = usuarioConRol('auxiliar_farmacia');
+        Sanctum::actingAs($auxiliar);
+
+        $r = rn04Dispensar($s, 3);
+        $r->assertCreated();
+        $pendienteId = cuerpoDatos($r)['id'];
+        expect(cuerpoDatos($r)['estado'])->toBe('PENDIENTE_AUTORIZACION')
+            ->and(rn04StockDe($s['existencia']))->toBe(20);
+
+        $antes = rn04Instantanea();
+        rn04AfirmarExcede(rn04Dispensar($s, 8), $s['item']->id, 7, 8);
+        rn04AfirmarExcede(rn04Previsualizar($s, 8), $s['item']->id, 7, 8);
+        expect(rn04Instantanea())->toBe($antes);
+
+        Sanctum::actingAs(usuarioConRol('regente_farmacia'));
+        $rechazo = test()->postJson(RN04_URI."/{$pendienteId}/rechazar", ['motivo' => 'Soporte de control especial incompleto']);
+        $rechazo->assertOk();
+        expect(cuerpoDatos($rechazo)['estado'])->toBe('RECHAZADA')
+            ->and(DB::table('movimientos_kardex')->where('documento_tipo', 'dispensacion')->where('documento_id', $pendienteId)->count())->toBe(0);
+
+        // Pendiente de vuelta en 10: lo dice la previsualización (200) y la creación de 10 (201,
+        // nueva PENDIENTE_AUTORIZACION por ser de control especial; el stock sigue sin moverse).
+        Sanctum::actingAs($auxiliar);
+        rn04Previsualizar($s, 10)->assertOk();
+        rn04AfirmarExcede(rn04Previsualizar($s, 11), $s['item']->id, 10, 11);
+        $nueva = rn04Dispensar($s, 10);
+        $nueva->assertCreated();
+        expect(cuerpoDatos($nueva)['estado'])->toBe('PENDIENTE_AUTORIZACION')
+            ->and(cuerpoDatos($nueva)['id'])->not->toBe($pendienteId)
+            ->and(DB::table('dispensaciones')->where('id', $pendienteId)->value('estado'))->toBe('RECHAZADA')
+            ->and(rn04StockDe($s['existencia']))->toBe(20);
+    });
+
+    it('RN-04-AC9: flujo real, variante: si un regente distinto AUTORIZA la de 3 en vez de rechazarla, sigue restando 3: pedir 8 → 422 pendiente 7 sin cambios; pedir 7 → 201', function () {
+        $s = rn04EscenarioControl();
+        $auxiliar = usuarioConRol('auxiliar_farmacia');
+        Sanctum::actingAs($auxiliar);
+
+        $r = rn04Dispensar($s, 3);
+        $r->assertCreated();
+        $pendienteId = cuerpoDatos($r)['id'];
+
+        Sanctum::actingAs(usuarioConRol('regente_farmacia'));
+        $autorizada = test()->postJson(RN04_URI."/{$pendienteId}/autorizar");
+        $autorizada->assertOk();
+        expect(cuerpoDatos($autorizada)['estado'])->toBe('CONFIRMADA')
+            ->and(rn04StockDe($s['existencia']))->toBe(17)
+            ->and(rn04Confirmado($s['item']))->toBe(3);
+
+        Sanctum::actingAs($auxiliar);
+        $antes = rn04Instantanea();
+        rn04AfirmarExcede(rn04Dispensar($s, 8), $s['item']->id, 7, 8);
+        rn04AfirmarExcede(rn04Previsualizar($s, 8), $s['item']->id, 7, 8);
+        expect(rn04Instantanea())->toBe($antes);
+
+        $siete = rn04Dispensar($s, 7);
+        $siete->assertCreated();
+        expect(cuerpoDatos($siete)['estado'])->toBe('PENDIENTE_AUTORIZACION');
+        rn04AfirmarExcede(rn04Dispensar($s, 1), $s['item']->id, 0, 1);
+    });
+});
+
+describe('RN-04-AC9 pendientes de autorización y rechazadas (cálculo con estados preparados por SQL)', function () {
+    beforeEach(fn () => rn04Congelar());
+
+    it('RN-04-AC9 (cálculo con estados preparados): con una PENDIENTE_AUTORIZACION de 3 sobre un ítem de 10, pedir 8 → 422 con pendiente 7; tras RECHAZARLA, 8 → 201', function () {
         $s = rn04Escenario(10, 20);
         $pendienteId = rn04DispensacionEnEstado($s, $s['item'], 3, 'PENDIENTE_AUTORIZACION');
         actuarComo('auxiliar_farmacia');
@@ -896,7 +993,7 @@ describe('RN-04-AC9 pendientes de autorización y rechazadas', function () {
         expect(DB::table('dispensaciones')->where('id', $pendienteId)->value('estado'))->toBe('RECHAZADA');
     });
 
-    it('RN-04-AC9 S-06: la PENDIENTE_AUTORIZACION de 3 no reserva stock pero sí tope: con stock 20 se pueden dispensar 7 (exacto) y el stock queda en 13', function () {
+    it('RN-04-AC9 S-06 (cálculo con estados preparados): la PENDIENTE_AUTORIZACION de 3 no reserva stock pero sí tope: con stock 20 se pueden dispensar 7 (exacto) y el stock queda en 13', function () {
         $s = rn04Escenario(10, 20);
         rn04DispensacionEnEstado($s, $s['item'], 3, 'PENDIENTE_AUTORIZACION');
         actuarComo('regente_farmacia');
@@ -909,7 +1006,7 @@ describe('RN-04-AC9 pendientes de autorización y rechazadas', function () {
             ->and(rn04StockDe($s['existencia']))->toBe(13);
     });
 
-    it('RN-04-AC9: una RECHAZADA de 10 no consume el tope: se dispensan 10 (201)', function () {
+    it('RN-04-AC9 (cálculo con estados preparados): una RECHAZADA de 10 no consume el tope: se dispensan 10 (201)', function () {
         $s = rn04Escenario(10, 20);
         rn04DispensacionEnEstado($s, $s['item'], 10, 'RECHAZADA');
         actuarComo('auxiliar_farmacia');
@@ -917,7 +1014,7 @@ describe('RN-04-AC9 pendientes de autorización y rechazadas', function () {
         rn04AfirmarCreada(rn04Dispensar($s, 10), $s, 10, 20);
     });
 
-    it('RN-04-AC9 RN-04-AC5: mezcla de estados: CONFIRMADA 2 (real) + PENDIENTE 3 + RECHAZADA 4 sobre 10 → pendiente 5: 6 → 422 pendiente 5; 5 → 201', function () {
+    it('RN-04-AC9 RN-04-AC5 (cálculo con estados preparados): mezcla de estados: CONFIRMADA 2 (real) + PENDIENTE 3 + RECHAZADA 4 sobre 10 → pendiente 5: 6 → 422 pendiente 5; 5 → 201', function () {
         $s = rn04Escenario(10, 20);
         actuarComo('auxiliar_farmacia');
         rn04AfirmarCreada(rn04Dispensar($s, 2), $s, 2, 20);

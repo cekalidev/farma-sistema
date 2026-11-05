@@ -757,10 +757,12 @@ describe('RN-09-AC7 reintento tras un fallo', function () {
 | RN-09-AC8 reproducción literal
 |--------------------------------------------------------------------------
 |
-| Hasta RN-05 no hay dispensaciones PENDIENTE_AUTORIZACION reales (control especial). Aquí se
-| prueba la mitad que es de RN-09: lo que se reproduce es la respuesta ORIGINAL guardada, no el
-| estado actual de la dispensación, y el reintento no crea otra. El caso completo (producto de
-| control especial → pendiente → reintento) se prueba en RN-05.
+| Aquí se prueba la mitad que es de RN-09: lo que se reproduce es la respuesta ORIGINAL guardada,
+| no el estado actual de la dispensación, y el reintento no crea otra. Los cambios de estado se
+| fuerzan por SQL a propósito (incluso transiciones que el flujo no permite, como CONFIRMADA →
+| PENDIENTE_AUTORIZACION) para demostrar que la reproducción no lee el estado actual. El caso de
+| negocio real (producto de control especial → pendiente → autorizar o rechazar → reintento) se
+| prueba en RN05ControlEspecialTest ("RN-09-AC8 RN-05-AC2 RN-05-AC3" y "RN-09-AC8 RN-05-AC8").
 */
 
 describe('RN-09-AC8 reproducción de la respuesta original', function () {
@@ -795,7 +797,7 @@ describe('RN-09-AC8 reproducción de la respuesta original', function () {
         }],
     ]);
 
-    it('RN-09-AC8: con la dispensación en PENDIENTE_AUTORIZACION, el reintento devuelve el estado original (no el actual) y no crea otra pendiente', function () {
+    it('RN-09-AC8 S-52: reproducción literal aunque cambie el estado: una CONFIRMADA forzada por SQL a PENDIENTE_AUTORIZACION se sigue reproduciendo con su estado original (no el actual) y no se crea otra', function () {
         $s = rn09Escenario(10);
         actuarComo('regente_farmacia');
         $cuerpo = rn09Cuerpo($s, [[$s['item1'], 2]]);

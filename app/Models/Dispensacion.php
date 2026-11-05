@@ -13,8 +13,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * Dispensación (RN-02). Solo la crea App\Services\Dispensacion\DispensacionService; el stock lo
- * descuenta App\Services\Dispensacion\SalidaStock. Columnas de RN-05 (autorización/rechazo) existen
- * ya en la tabla, pero su lógica llega en esa RN. RN-09: idempotency_key + request_hash (único por
+ * descuenta App\Services\Dispensacion\SalidaStock. RN-05: la autoriza o rechaza
+ * App\Services\Dispensacion\AutorizacionDispensacion (CHECK: nunca quien la dispensó). RN-09: idempotency_key + request_hash (único por
  * usuario) y la respuesta original (respuesta_status, respuesta_cuerpo: JSON literal, sin cast).
  *
  * @property int $id
@@ -39,6 +39,7 @@ use Illuminate\Support\Carbon;
  * @property-read Bodega $bodega
  * @property-read User $dispensadoPor
  * @property-read User|null $autorizadoPor
+ * @property-read User|null $rechazadoPor
  * @property-read Collection<int, DispensacionItem> $items
  * @property-read Collection<int, DispensacionDetalle> $detalles
  */
@@ -104,6 +105,12 @@ class Dispensacion extends Model
     public function autorizadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'autorizado_por_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function rechazadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rechazado_por_id');
     }
 
     /** @return HasMany<DispensacionItem, $this> */

@@ -6,17 +6,24 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dispensacion\PrevisualizarDispensacionRequest;
+use App\Http\Requests\Dispensacion\RechazarDispensacionRequest;
 use App\Http\Requests\Dispensacion\StoreDispensacionRequest;
 use App\Http\Resources\DispensacionResource;
 use App\Http\Resources\PrevisualizacionDispensacionResource;
 use App\Models\Dispensacion;
+use App\Services\Dispensacion\AutorizacionDispensacion;
 use App\Services\Dispensacion\DispensacionService;
 use App\Services\Dispensacion\RespuestaIdempotente;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DispensacionController extends Controller
 {
-    public function __construct(private readonly DispensacionService $dispensaciones) {}
+    public function __construct(
+        private readonly DispensacionService $dispensaciones,
+        private readonly AutorizacionDispensacion $autorizacion,
+    ) {}
 
     /**
      * RN-09: la respuesta (status + JSON literal) la guarda el servicio con la dispensación; un
@@ -45,5 +52,24 @@ class DispensacionController extends Controller
     public function previsualizar(PrevisualizarDispensacionRequest $request): PrevisualizacionDispensacionResource
     {
         return new PrevisualizacionDispensacionResource($this->dispensaciones->previsualizar($request->datos()));
+    }
+
+    /** RN-05-AC3: 200 con la dispensación CONFIRMADA y sus tramos FEFO. Rol y segundo regente: Policy de la ruta. */
+    public function autorizar(Request $request, Dispensacion $dispensacion): DispensacionResource
+    {
+        return new DispensacionResource($this->autorizacion->autorizar(
+            $dispensacion,
+            $request->user()->id ?? throw new AuthenticationException,
+        ));
+    }
+
+    /** RN-05-AC8: 200 con la dispensación RECHAZADA, sin movimientos. */
+    public function rechazar(RechazarDispensacionRequest $request, Dispensacion $dispensacion): DispensacionResource
+    {
+        return new DispensacionResource($this->autorizacion->rechazar(
+            $dispensacion,
+            $request->user()->id ?? throw new AuthenticationException,
+            $request->motivo(),
+        ));
     }
 }
