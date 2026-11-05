@@ -1,0 +1,20 @@
+# Contexto mínimo de la imagen de la API
+# Ocultos (git, CI, editores, .env*): fuera, salvo la plantilla de entorno.
+.*
+!.env.example
+**/*.md
+docs
+vendor
+node_modules
+tests
+phpunit*.xml
+phpstan.neon
+docker-compose.yml
+render.yaml
+Dockerfile
+# storage en tiempo de ejecución (se crea vacío en la imagen) y cachés generadas en local
+storage
+bootstrap/cache/*.php
+public/storage
+public/hot
+docker/postgres

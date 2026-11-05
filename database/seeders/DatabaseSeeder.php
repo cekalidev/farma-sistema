@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use Database\Seeders\Concerns\GuardaProduccion;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * BASE-AC6: datos SINTÉTICOS repetibles con `php artisan migrate:fresh --seed`.
@@ -22,11 +23,14 @@ class DatabaseSeeder extends Seeder
         // Antes de cualquier escritura (también la valida UsuariosSeeder por sí mismo).
         $this->abortarEnProduccionSinPermiso();
 
-        $this->call([
+        // Atómica: si falla a medias (p. ej. en el arranque del contenedor), no quedan usuarios sin
+        // catálogo ni inventario, y el siguiente arranque vuelve a sembrar (tabla users vacía).
+        // Las transacciones internas (InventarioSeeder) pasan a ser savepoints.
+        DB::transaction(fn () => $this->call([
             UsuariosSeeder::class,
             CatalogoSeeder::class,
             InventarioSeeder::class,
             PacientesSeeder::class,
-        ]);
+        ]));
     }
 }

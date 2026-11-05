@@ -5,8 +5,8 @@ contrato completo está en [`../contrato-api.md`](../contrato-api.md).
 
 | Archivo | Contenido |
 |---|---|
-| `farma-sistema.postman_collection.json` | 120 peticiones en 11 carpetas, con tests (`pm.test`) |
-| `farma-sistema-local.postman_environment.json` | `base_url`, correos de los usuarios semilla, contraseña de desarrollo y variables `token_<rol>` |
+| `farma-sistema.postman_collection.json` | 122 peticiones en 12 carpetas, con tests (`pm.test`) |
+| `farma-sistema-local.postman_environment.json` | `base_url`, `root_url`, correos de los usuarios semilla, contraseña de desarrollo y variables `token_<rol>` |
 
 ## Importar
 
@@ -27,6 +27,7 @@ Usuarios semilla (contraseña de desarrollo `Farma2026!`): `auxiliar@`, `regente
 
 Ejecute la colección completa con el **Collection Runner** (o carpeta por carpeta, en orden):
 
+0. **Salud** (opcional): `GET /health` y `GET /ready` en la raíz, sin auth (usan `root_url`).
 1. **0. Auth** primero: inicia sesión con cada rol y guarda `token_auxiliar`, `token_regente`,
    `token_regente2`, `token_medico`, `token_auditor` y `token_admin`.
 2. **1. Catálogo** y **2. Inventario** guardan los ids de bodegas, productos, lotes y existencias
@@ -59,5 +60,5 @@ dos ejecuciones seguidas, espere un minuto o vuelva a sembrar con `php artisan m
 
 ## Otros entornos
 
-Con Docker o con el despliegue en Render solo cambia `base_url` (por ejemplo
-`https://<servicio>.onrender.com/api/v1`). El resto de variables no cambia.
+Con Docker o con el despliegue en Render se cambian `base_url` y `root_url` (por ejemplo
+`https://<servicio>.onrender.com/api/v1` y `https://<servicio>.onrender.com`). El resto de variables no cambia.

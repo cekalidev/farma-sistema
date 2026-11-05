@@ -7,6 +7,95 @@
   },
   "item": [
     {
+      "id": "563834be-2f25-5dc1-8b70-2e1dbb92964d",
+      "name": "Salud",
+      "description": "Sondas de despliegue `/health` y `/ready` en la raíz (usan `root_url`, sin `/api/v1`), sin auth.",
+      "item": [
+        {
+          "id": "e5660dbb-219b-576f-b52f-b6b21011e615",
+          "name": "Health (liveness)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{root_url}}/health",
+              "host": [
+                "{{root_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Sonda de vida en la raíz (fuera de `/api/v1`), sin auth. No toca la BD. Contrato §1.9.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "08228411-f559-5072-9c5e-4fbd80a84375",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cuerpo {status: ok}', () => pm.expect(pm.response.json()).to.eql({ status: 'ok' }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b09ae22b-6c17-51c9-8623-3f14adae067a",
+          "name": "Ready (readiness)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{root_url}}/ready",
+              "host": [
+                "{{root_url}}"
+              ],
+              "path": [
+                "ready"
+              ]
+            },
+            "description": "Sonda de disponibilidad en la raíz (fuera de `/api/v1`), sin auth: comprueba conexión a la BD y migraciones aplicadas. 503 si alguna falla. Contrato §1.9.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "4e99d2e6-f27a-5fed-a4ef-e0152cfa5a48",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('status = ready', () => pm.expect(j.status).to.eql('ready'));",
+                  "pm.test('checks database y migrations = ok', () => pm.expect(j.checks).to.eql({ database: 'ok', migrations: 'ok' }));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "9a7cc9bc-8ee4-5afc-92e4-1488d7db03a2",
       "name": "0. Auth",
       "description": "Login por rol (guarda `token_<rol>`), usuario actual y logout.",

@@ -112,6 +112,30 @@ Para cualquier ruta autenticada: **401** (token) → **429** (tasa) → **404** 
 cuerpo, `VALIDACION`; S-27) → errores de negocio (422 / 409 / 403 según el caso). Cada endpoint
 detalla su orden en §4.
 
+### 1.9 Sondas de despliegue, CORS y cabeceras de seguridad (Parte D)
+
+Sondas en la **raíz** (no cuelgan de `/api/v1`), sin autenticación, sin sesión y sin límite de tasa.
+No usan la envoltura de error del §2: son para el orquestador (Render, compose), no para el frontend.
+
+| Ruta | Uso | Respuesta |
+|---|---|---|
+| `GET /health` | *Liveness*: el proceso responde. No consulta la BD. | `200 {"status":"ok"}` |
+| `GET /ready` | *Readiness*: `SELECT 1` en la BD y ninguna migración pendiente. | `200 {"status":"ready","checks":{"database":"ok","migrations":"ok"}}` · `503 {"status":"unavailable","checks":{"database":"fail"\|"ok","migrations":"unknown"\|"pending"}}` |
+| `GET /up` | Sonda estándar de Laravel (se conserva). | `200` |
+
+**CORS** (solo `api/*`): orígenes permitidos en `CORS_ALLOWED_ORIGINS` (lista separada por comas;
+vacía por defecto → ningún origen cruzado). Sin credenciales (`Access-Control-Allow-Credentials`
+ausente): el token va en `Authorization`, nunca en cookies. Cabeceras de petición permitidas:
+`Accept`, `Authorization`, `Content-Type`, `Idempotency-Key`, `X-Correlation-Id`, `X-Request-Id`.
+Expuestas al navegador: `X-Correlation-Id`, `X-Request-Id`, `Idempotent-Replayed`, `Retry-After`,
+`X-RateLimit-Limit`, `X-RateLimit-Remaining`. Preflight `OPTIONS` → `204`, caché 600 s. Si el
+frontend se sirve con su proxy `/api/` en el mismo origen (compose), no necesita CORS.
+
+**Cabeceras de seguridad** en toda respuesta (también errores y sondas): `X-Content-Type-Options:
+nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` y, solo si la petición llegó por
+https (directo o `X-Forwarded-Proto: https` del proxy de confianza), `Strict-Transport-Security:
+max-age=31536000; includeSubDomains`.
+
 ---
 
 ## 2. Formato de error y códigos
@@ -971,3 +995,4 @@ el estado con la habilidad y el usuario:
 | 2026-11-05 | `v0.11.0` (+ RN-11 en revisión) | Primera versión del contrato: auth, catálogo, inventario y kardex, dispensación (FEFO, idempotencia, control especial), pacientes (privacidad), traslados y discrepancias, auditoría; alertas RN-11 en revisión. |
 | 2026-11-05 | `v0.12.0` (RN-11) | Alertas cerradas (§4.8): `GET /alertas/vencimientos` y `GET /alertas/stock-minimo` sin la marca «en revisión»; `dias_restantes` (S-83), filtros y `meta.hoy`/`meta.dias_alerta_vencimiento` (S-84), orden con desempates (S-85), inactivos y mínimo 0 (S-86), umbral 0 o negativo (S-87); errores con `401 NO_AUTENTICADO`. `GET /bodegas` y `GET /productos` aceptan y validan `por_pagina` (1–100, 25) y `page` (≤ 1.000.000) → `422 VALIDACION` fuera de rango, orden `nombre` + `id` (S-88). |
 | 2026-11-05 | `v0.13.0` | Nuevo `GET /dispensaciones` (§4.4, S-89): listado paginado (`por_pagina` 1–100, 25; `page` ≤ 1.000.000) con filtros `estado` y `bodega_id` (vacío → `422`), orden `created_at` ASC + `id`; filas con `dispensado_por {id, nombre}`, sin `paciente` ni `detalles`; aux, regente y auditor (médico y admin `403`, antes que la validación); sin rastro en la bitácora. Matriz de permisos (§3.2), nota de UX del panel de pendientes del regente y retirada de §6 («sin listado de dispensaciones»). Corrección (§1.6 y ejemplos): las marcas de tiempo salen en hora de Bogotá con desfase `-05:00`, no `+00:00`. |
+| 2026-11-05 | Parte D (sin tag) | Sondas `GET /health` (liveness, sin BD) y `GET /ready` (BD + migraciones; `200`/`503`) en la raíz, sin auth ni throttle; `/up` se conserva (§1.9). CORS para `api/*` desde `CORS_ALLOWED_ORIGINS`, sin credenciales, con cabeceras expuestas. Cabeceras de seguridad en toda respuesta (nosniff, `X-Frame-Options: DENY`, `Referrer-Policy`, HSTS solo en https) y proxies de confianza (`TRUSTED_PROXIES`, `*` por defecto). |

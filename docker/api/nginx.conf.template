@@ -1,0 +1,54 @@
+# Nginx sin root delante de PHP-FPM. El entrypoint sustituye ${PORT} y escribe /tmp/nginx.conf.
+worker_processes 1;
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+
+events {
+    worker_connections 512;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    server_tokens off;
+    sendfile on;
+    keepalive_timeout 30;
+    client_max_body_size 2m;
+
+    client_body_temp_path /tmp/nginx-client;
+    proxy_temp_path /tmp/nginx-proxy;
+    fastcgi_temp_path /tmp/nginx-fastcgi;
+    uwsgi_temp_path /tmp/nginx-uwsgi;
+    scgi_temp_path /tmp/nginx-scgi;
+
+    # Sin access log: Laravel ya registra lo relevante con correlation id y sin PII (las URL de
+    # /pacientes/{id} no llevan datos personales, pero los query strings de búsqueda podrían).
+    access_log off;
+
+    server {
+        listen ${PORT};
+        server_name _;
+        root /var/www/html/public;
+        index index.php;
+
+        location / {
+            try_files $uri /index.php$is_args$args;
+        }
+
+        location = /index.php {
+            include /etc/nginx/fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+            fastcgi_param DOCUMENT_ROOT $document_root;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_read_timeout 60s;
+        }
+
+        location ~ \.php$ {
+            return 404;
+        }
+
+        location ~ /\. {
+            deny all;
+        }
+    }
+}

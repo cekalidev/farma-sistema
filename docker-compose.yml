@@ -1,0 +1,121 @@
+# Sistema completo en local con un solo comando:
+#
+#   docker compose up --build          (o: podman-compose up --build)
+#
+# - api        http://localhost:${API_PORT:-8000}   (Laravel; /health, /ready, /api/v1)
+# - web        http://localhost:${WEB_PORT:-8080}   (frontend React; su nginx hace de proxy /api/ → api)
+# - scheduler  `php artisan schedule:work` con la misma imagen
+# - db         PostgreSQL 16 con volumen nombrado
+#
+# El frontend vive en otro repositorio, clonado al lado: ../farma-sistema-web.
+# Todo arranca sin .env en el host: las variables tienen valores de DEMOSTRACIÓN.
+# Compose lee el .env del directorio para interpolar ${...}: por eso aquí no se interpolan APP_*,
+# DB_* ni LOG_* (el .env de desarrollo local no debe colarse en la demo). Variables propias:
+#   API_PORT, WEB_PORT, API_APP_KEY (sin ella la API genera una clave efímera y lo avisa en el log;
+#   generarla con `php artisan key:generate --show`), API_CORS_ORIGINS.
+
+name: farma-sistema
+
+x-api-env: &api-env
+  APP_NAME: farma-sistema
+  APP_ENV: production
+  APP_DEBUG: 'false'
+  APP_KEY: ${API_APP_KEY:-}
+  APP_URL: http://localhost:${API_PORT:-8000}
+  LOG_CHANNEL: stderr
+  LOG_STDERR_FORMATTER: Monolog\Formatter\JsonFormatter
+  LOG_LEVEL: info
+  DB_CONNECTION: pgsql
+  DB_HOST: db
+  DB_PORT: '5432'
+  DB_DATABASE: farma
+  DB_USERNAME: farma
+  DB_PASSWORD: farma_demo # solo demo local
+  CACHE_STORE: database
+  SESSION_DRIVER: array
+  QUEUE_CONNECTION: sync
+  CORS_ALLOWED_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:5173}
+  # Solo el nginx del frontend (IP fija en la red interna) es proxy de confianza: quien llame a la
+  # API publicada en el host no puede falsear X-Forwarded-For / X-Forwarded-Proto.
+  TRUSTED_PROXIES: 172.30.87.10
+
+services:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: farma
+      POSTGRES_USER: farma
+      POSTGRES_PASSWORD: farma_demo # solo demo local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  api:
+    build: .
+    image: farma-sistema-api:local
+    environment:
+      <<: *api-env
+      PORT: '8000'
+      # Datos sintéticos de demostración solo si la tabla users está vacía (idempotente).
+      SEED_DEMO: 'true'
+    ports:
+      - '${API_PORT:-8000}:8000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8000/ready']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  scheduler:
+    image: farma-sistema-api:local
+    command: ['php', 'artisan', 'schedule:work']
+    environment: *api-env
+    depends_on:
+      api:
+        condition: service_healthy
+    # La sonda HTTP de la imagen no aplica: aquí no hay Nginx.
+    healthcheck:
+      disable: true
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../farma-sistema-web
+    image: farma-sistema-web:local
+    environment:
+      API_UPSTREAM: http://api:8000
+    networks:
+      default:
+        ipv4_address: 172.30.87.10
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/healthz']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.87.0/24
+
+volumes:
+  pgdata:

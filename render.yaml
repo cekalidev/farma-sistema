@@ -1,0 +1,36 @@
+# Blueprint de Render: solo la API. La base de datos (Render Postgres 16) se crea a mano y su
+# "Internal Database URL" se pega en DB_URL (Laravel la lee en config/database.php).
+# Despliegue manual por Deploy Hook desde el workflow CD, tras la aprobación del environment
+# `production` en GitHub (autoDeploy desactivado).
+services:
+  - type: web
+    name: farma-sistema-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /ready
+    autoDeploy: false
+    envVars:
+      - key: APP_KEY
+        sync: false
+      - key: DB_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: 'false'
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_STDERR_FORMATTER
+        value: Monolog\Formatter\JsonFormatter
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: SEED_DEMO
+        value: 'true'

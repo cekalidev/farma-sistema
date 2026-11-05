@@ -1,0 +1,95 @@
+name: CI
+
+# En main y en tags v* la CI la ejecuta el workflow CD (workflow_call) antes de construir la
+# imagen; aquí se excluyen para no correr la suite dos veces por push.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  calidad:
+    name: Pint y Larastan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, intl, pcntl
+          coverage: none
+          tools: composer:v2
+
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Pint (estilo)
+        run: vendor/bin/pint --test
+
+      - name: Larastan nivel 9
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+  tests:
+    name: Tests Pest + cobertura (≥ 80 %)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: farma_test
+          POSTGRES_USER: farma
+          POSTGRES_PASSWORD: farma
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U farma -d farma_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    # phpunit.xml fija DB_CONNECTION=pgsql y DB_DATABASE=farma_test; el resto sale del entorno
+    # (las variables reales ganan al .env copiado de .env.example).
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_USERNAME: farma
+      DB_PASSWORD: farma
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, intl, pcntl
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Caché de Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: .env y APP_KEY de pruebas
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      # Una sola pasada: la suite completa con cobertura pcov; falla si baja del 80 %.
+      - name: Suite Pest con cobertura
+        run: composer test:coverage
