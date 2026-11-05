@@ -7,6 +7,7 @@ Declaración exigida por la sección 8 del enunciado: herramientas, tareas, ejem
 - **Claude Code** (modelo Claude Opus) como coordinador, con subagentes para: implementación, diseño de tests desde la spec, verificación de criterios y revisión de código. Como máximo dos revisores por paso.
 - Flujo por regla de negocio: plan → implementación + tests → verificación (Pint, Larastan nivel 9, suite completa, cobertura ≥ 80 %) → revisión → corrección → un commit por RN con tag (ver `git log`).
 - La configuración de agentes y reglas se mantuvo en local, fuera del repo.
+- Los diagramas de `docs/diagramas/` se generaron con Archify (herramienta de diagramas) a partir del código; su contenido se contrastó con el código.
 - La persona aprobó cada supuesto de negocio (S-01..S-89, en `docs/supuestos.md`) y ejecutó a mano todos los commits y push, sin firma de IA.
 
 ## Qué se delegó y qué no

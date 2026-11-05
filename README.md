@@ -61,6 +61,14 @@ Ruta /api/v1 → Controller (delgado) → Form Request (validación) → Policy 
 - La BD respalda las reglas críticas: CHECK, índices únicos y triggers de inmutabilidad.
 - Cada respuesta lleva `X-Correlation-Id`; los logs son JSON y redactan datos sensibles.
 
+## Diagramas
+
+En [`docs/diagramas/`](docs/diagramas/) están los 7 diagramas (capas, entrada de inventario, dispensación y sus estados, traslado y sus estados, consulta de paciente) en SVG, que se ven en GitHub, y en HTML interactivo (descargar y abrir en el navegador).
+
+![Capas del backend](docs/diagramas/capas-backend.svg)
+![Flujo de dispensación](docs/diagramas/dispensacion.svg)
+![Estados de un traslado](docs/diagramas/estados-traslado.svg)
+
 ## Reglas de negocio
 
 | RN | Dónde | Cómo se garantiza |
@@ -123,7 +131,8 @@ Lista completa (S-01 … S-89) en [`docs/supuestos.md`](docs/supuestos.md).
 - [`docs/postman/`](docs/postman/): colección con tests y environment local.
 - [`docs/despliegue.md`](docs/despliegue.md): Docker, CI/CD, Render, rollback y respaldos.
 - [`docs/supuestos.md`](docs/supuestos.md): supuestos S-01 … S-89.
-- Demo: _(URL de Render, pendiente)_
+- [`docs/diagramas/`](docs/diagramas/): diagramas en SVG y HTML interactivo.
+- Demo (plan gratuito de Render; la primera petición puede tardar 30–60 s): portal web <https://farma-sistema-web.onrender.com> y API <https://farma-sistema-api.onrender.com/api/v1>.
 
 ## Versionado
 
