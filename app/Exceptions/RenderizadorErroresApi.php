@@ -42,6 +42,15 @@ final class RenderizadorErroresApi
             // S-39: el trigger de inmutabilidad del kardex (23001 de movimientos_kardex_inmutable())
             // se responde igual que KardexInmutableException; sin SQL ni valores (solo el mensaje fijo).
             ErroresBaseDatos::esKardexInmutable($e) => $this->dominio(new KardexInmutableException),
+            // S-48: interbloqueo / serialización / bloqueo no disponible. La transacción se revirtió
+            // entera (sin cambios): 409 reintentable, nunca 500. Sin SQL ni valores.
+            ErroresBaseDatos::esConflictoConcurrencia($e) => $this->respuesta(
+                'CONFLICTO_CONCURRENCIA',
+                'La operación coincidió con otra simultánea y no se aplicó. Intente de nuevo.',
+                409,
+                ['reintentable' => true],
+                ['Retry-After' => '1'],
+            ),
             $e instanceof ValidationException => $this->respuesta('VALIDACION', 'Los datos enviados no son válidos.', 422, ['campos' => $e->errors()]),
             // Red de seguridad (los ids de ruta ya se filtran con Route::pattern → 404). Si un valor
             // del cliente llega a la BD sin poder convertirse (22P02, o 22003 con un binding que

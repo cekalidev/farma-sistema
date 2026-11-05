@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\Concurrencia;
 
 /*
  * RN-01-AC1 + RN-01-AC8 bajo concurrencia: varias entradas simultáneas sobre una existencia que
@@ -38,7 +39,7 @@ afterEach(function () {
 });
 
 /**
- * Lanza un hijo por cuerpo; todos esperan una barrera (flock) que el padre libera a la vez.
+ * Lanza un hijo por cuerpo; todos arrancan a la vez tras la barrera en dos fases de Tests\Concerns\Concurrencia.
  * Devuelve, por hijo, "status|codigo_error" (codigo vacío si no hubo error).
  *
  * @param  list<array<string, mixed>>  $cuerpos
@@ -46,72 +47,23 @@ afterEach(function () {
  */
 function rn01EntradasEnParalelo(User $regente, array $cuerpos): array
 {
-    $dir = sys_get_temp_dir().'/rn01-concurrencia-'.bin2hex(random_bytes(6));
-    mkdir($dir);
-    $barrera = "{$dir}/barrera";
-    touch($barrera);
+    $cuerpos = array_values($cuerpos);
 
-    $cerrojo = fopen($barrera, 'r');
-    if ($cerrojo === false || ! flock($cerrojo, LOCK_EX)) {
-        throw new RuntimeException('No se pudo tomar la barrera');
-    }
-
-    // Los hijos no deben heredar el socket de PostgreSQL del padre.
-    DB::disconnect();
-
-    $pids = [];
-    foreach ($cuerpos as $i => $cuerpo) {
-        $pid = pcntl_fork();
-        if ($pid === -1) {
-            throw new RuntimeException('pcntl_fork falló');
-        }
-
-        if ($pid === 0) {
-            $resultado = 'sin_resultado|';
+    return Concurrencia::enParalelo(
+        count($cuerpos),
+        function (int $i) use ($cuerpos): string {
             try {
-                DB::purge();
-                DB::reconnect();
-                Sanctum::actingAs($regente);
+                $respuesta = test()->postJson('/api/v1/inventario/entradas', $cuerpos[$i]);
 
-                // Nueva descripción de archivo: el LOCK_SH bloquea hasta que el padre suelte el LOCK_EX.
-                $espera = fopen($barrera, 'r');
-                flock($espera, LOCK_SH);
-
-                $respuesta = test()->postJson('/api/v1/inventario/entradas', $cuerpo);
-                $resultado = $respuesta->getStatusCode().'|'.($respuesta->json('error.codigo') ?? '');
+                return $respuesta->getStatusCode().'|'.($respuesta->json('error.codigo') ?? '');
             } catch (Throwable $e) {
-                $resultado = 'excepcion|'.$e::class.': '.$e->getMessage();
+                return 'excepcion|'.$e::class.': '.$e->getMessage();
             }
-
-            file_put_contents("{$dir}/resultado-{$i}", $resultado);
-            DB::disconnect();
-            exit(0);
-        }
-
-        $pids[] = $pid;
-    }
-
-    // Todos los hijos lanzados: se suelta la barrera para que arranquen a la vez.
-    flock($cerrojo, LOCK_UN);
-    fclose($cerrojo);
-
-    foreach ($pids as $pid) {
-        pcntl_waitpid($pid, $estado);
-    }
-
-    DB::purge();
-    DB::reconnect();
-
-    $resultados = [];
-    foreach (array_keys($cuerpos) as $i) {
-        $archivo = "{$dir}/resultado-{$i}";
-        $resultados[] = is_file($archivo) ? (string) file_get_contents($archivo) : 'hijo_sin_archivo|';
-        @unlink($archivo);
-    }
-    @unlink($barrera);
-    @rmdir($dir);
-
-    return $resultados;
+        },
+        function () use ($regente): void {
+            Sanctum::actingAs($regente);
+        },
+    );
 }
 
 it('RN-01-AC1 RN-01-AC8 concurrencia: N entradas simultáneas sobre una existencia nueva crean UNA existencia (y un lote) con la suma exacta', function (string $forma) {

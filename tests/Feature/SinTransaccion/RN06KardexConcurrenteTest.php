@@ -12,6 +12,7 @@ use App\Support\Negocio;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\Concurrencia;
 
 /*
  * RN-06 bajo concurrencia: ajustes negativos y entradas simultáneos sobre la MISMA existencia.
@@ -38,78 +39,32 @@ afterEach(function () {
 });
 
 /**
- * Lanza un hijo por petición [uri, cuerpo]; todos esperan una barrera (flock) que el padre libera
- * a la vez. Devuelve, por hijo, "status|codigo_error".
+ * Lanza un hijo por petición [uri, cuerpo]; todos arrancan a la vez tras la barrera en dos fases de
+ * Tests\Concerns\Concurrencia. Devuelve, por hijo, "status|codigo_error".
  *
  * @param  list<array{0: string, 1: array<string, mixed>}>  $peticiones
  * @return list<string>
  */
 function rn06ConcEnParalelo(User $usuario, array $peticiones): array
 {
-    $dir = sys_get_temp_dir().'/rn06-concurrencia-'.bin2hex(random_bytes(6));
-    mkdir($dir);
-    $barrera = "{$dir}/barrera";
-    touch($barrera);
+    $peticiones = array_values($peticiones);
 
-    $cerrojo = fopen($barrera, 'r');
-    if ($cerrojo === false || ! flock($cerrojo, LOCK_EX)) {
-        throw new RuntimeException('No se pudo tomar la barrera');
-    }
-
-    // Los hijos no deben heredar el socket de PostgreSQL del padre.
-    DB::disconnect();
-
-    $pids = [];
-    foreach ($peticiones as $i => [$uri, $cuerpo]) {
-        $pid = pcntl_fork();
-        if ($pid === -1) {
-            throw new RuntimeException('pcntl_fork falló');
-        }
-
-        if ($pid === 0) {
-            $resultado = 'sin_resultado|';
+    return Concurrencia::enParalelo(
+        count($peticiones),
+        function (int $i) use ($peticiones): string {
+            [$uri, $cuerpo] = $peticiones[$i];
             try {
-                DB::purge();
-                DB::reconnect();
-                Sanctum::actingAs($usuario);
-
-                $espera = fopen($barrera, 'r');
-                flock($espera, LOCK_SH);
-
                 $respuesta = test()->postJson($uri, $cuerpo);
-                $resultado = $respuesta->getStatusCode().'|'.($respuesta->json('error.codigo') ?? '');
+
+                return $respuesta->getStatusCode().'|'.($respuesta->json('error.codigo') ?? '');
             } catch (Throwable $e) {
-                $resultado = 'excepcion|'.$e::class.': '.$e->getMessage();
+                return 'excepcion|'.$e::class.': '.$e->getMessage();
             }
-
-            file_put_contents("{$dir}/resultado-{$i}", $resultado);
-            DB::disconnect();
-            exit(0);
-        }
-
-        $pids[] = $pid;
-    }
-
-    flock($cerrojo, LOCK_UN);
-    fclose($cerrojo);
-
-    foreach ($pids as $pid) {
-        pcntl_waitpid($pid, $estado);
-    }
-
-    DB::purge();
-    DB::reconnect();
-
-    $resultados = [];
-    foreach (array_keys($peticiones) as $i) {
-        $archivo = "{$dir}/resultado-{$i}";
-        $resultados[] = is_file($archivo) ? (string) file_get_contents($archivo) : 'hijo_sin_archivo|';
-        @unlink($archivo);
-    }
-    @unlink($barrera);
-    @rmdir($dir);
-
-    return $resultados;
+        },
+        function () use ($usuario): void {
+            Sanctum::actingAs($usuario);
+        },
+    );
 }
 
 /**

@@ -25,6 +25,15 @@ final class ErroresBaseDatos
     /** 23001 restrict_violation: ERRCODE del trigger de inmutabilidad del kardex. */
     public const RESTRICCION_VIOLADA = '23001';
 
+    /** 40P01 deadlock_detected: PostgreSQL abortó esta transacción para romper un interbloqueo. */
+    public const INTERBLOQUEO = '40P01';
+
+    /** 40001 serialization_failure: la transacción no se pudo serializar con otra concurrente. */
+    public const FALLO_SERIALIZACION = '40001';
+
+    /** 55P03 lock_not_available: NOWAIT o lock_timeout sin obtener el bloqueo. */
+    public const BLOQUEO_NO_DISPONIBLE = '55P03';
+
     /**
      * Texto fijo del RAISE de la función movimientos_kardex_inmutable() (migración
      * create_movimientos_kardex_table). Distingue ese trigger de cualquier otro 23001.
@@ -72,6 +81,22 @@ final class ErroresBaseDatos
     }
 
     /**
+     * S-48: ¿PostgreSQL abortó la operación por un choque con otra transacción concurrente
+     * (interbloqueo, fallo de serialización o bloqueo no disponible)? La transacción se revirtió
+     * entera, así que el cliente puede reintentar la misma petición.
+     */
+    public static function esConflictoConcurrencia(Throwable $e): bool
+    {
+        $consulta = self::consultaFallida($e);
+
+        return $consulta !== null && in_array((string) $consulta->getCode(), [
+            self::INTERBLOQUEO,
+            self::FALLO_SERIALIZACION,
+            self::BLOQUEO_NO_DISPONIBLE,
+        ], true);
+    }
+
+    /**
      * ¿El fallo es el trigger de inmutabilidad del kardex (RN-06-AC4) rechazando un UPDATE, DELETE
      * o TRUNCATE? S-39: si llega a una petición se responde 409 KARDEX_INMUTABLE. Solo ese trigger:
      * exige el SQLSTATE 23001 y el mensaje propio de movimientos_kardex_inmutable().
@@ -116,7 +141,11 @@ final class ErroresBaseDatos
             'pila' => self::pilaSinArgumentos($consulta),
         ];
 
-        $nivel = $request !== null && self::esDatoInvalidoDelCliente($e, $request) ? 'warning' : 'error';
+        // Esperables y sin fallo del servidor: dato mal formado del cliente o choque de concurrencia
+        // (S-48, reintentable). El resto es un fallo interno.
+        $nivel = self::esConflictoConcurrencia($e) || ($request !== null && self::esDatoInvalidoDelCliente($e, $request))
+            ? 'warning'
+            : 'error';
         Log::log($nivel, 'Error de base de datos (SQL y valores omitidos).', $contexto);
 
         return false;
