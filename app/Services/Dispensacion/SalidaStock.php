@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\DB;
  * 1. Bloquea con FOR UPDATE TODAS las existencias de los productos de la dispensación en su bodega,
  *    en un único orden global por existencias.id (orden determinista: dos dispensaciones que
  *    comparten existencias las bloquean en el mismo orden y no se interbloquean).
+ *    Va siempre después de bloquear los prescripcion_items (orden global prescripcion_items →
+ *    existencias, ver DispensacionService); quien la llame (RN-05 al autorizar) debe respetarlo.
  * 2. Recalcula FEFO con AsignadorFefo sobre las filas ya bloqueadas (nunca con valores leídos antes).
  * 3. Por cada tramo: RegistradorKardex (SALIDA_DISPENSACION, documento dispensación + id) y un
  *    dispensacion_detalle ligado a su movimiento.

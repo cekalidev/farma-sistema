@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Dispensacion;
 
 use App\Enums\EstadoDispensacion;
+use App\Exceptions\Dominio\CantidadExcedePrescrito;
 use App\Exceptions\Dominio\IdempotencyKeyReutilizada;
 use App\Exceptions\Dominio\PrescripcionNoCorresponde;
+use App\Exceptions\Dominio\PrescripcionNoVigente;
 use App\Exceptions\Dominio\StockInsuficiente;
 use App\Exceptions\ErroresBaseDatos;
 use App\Models\Bodega;
@@ -17,6 +19,7 @@ use App\Models\Prescripcion;
 use App\Models\PrescripcionItem;
 use App\Services\Inventario\ConsultaKardexService;
 use App\Support\Negocio;
+use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -31,10 +34,17 @@ use Illuminate\Validation\ValidationException;
  * canónico del cuerpo y la respuesta enviada; un reintento del mismo usuario con la misma clave
  * la reproduce (mismo hash) o responde 422 IDEMPOTENCY_KEY_REUTILIZADA (otro hash). Ver crear().
  *
- * Reglas que llegan en commits posteriores (puntos marcados con "RN-0x:" abajo):
- *  - RN-04 vigencia de la prescripción (S-05) y tope acumulado por ítem, con lockForUpdate de los
- *    prescripcion_items.
- *  - RN-05 control especial: PENDIENTE_AUTORIZACION sin mover stock (S-06).
+ * RN-04 precedencia de errores de negocio (crear y previsualizar, tras la validación de forma y
+ * S-46): PRESCRIPCION_NO_CORRESPONDE → PRESCRIPCION_NO_VIGENTE → CANTIDAD_EXCEDE_PRESCRITO (422)
+ * → STOCK_INSUFICIENTE (409). El tope va antes que el stock: pedir más de lo prescrito es un error
+ * de la solicitud que no se arregla reponiendo stock.
+ *
+ * Orden global de bloqueo (evita interbloqueos; RN-05 al autorizar debe respetarlo):
+ *  1. índice único de idempotencia (INSERT de la cabecera, sin otras filas bloqueadas, RN-09-AC6);
+ *  2. prescripcion_items afectados, FOR UPDATE por id ascendente (tope, RN-04-AC8);
+ *  3. existencias de la bodega, FOR UPDATE por id ascendente (SalidaStock, RN-03).
+ *
+ * Pendiente (marcado "RN-05:" abajo): control especial → PENDIENTE_AUTORIZACION sin mover stock (S-06).
  */
 final class DispensacionService
 {
@@ -47,6 +57,7 @@ final class DispensacionService
     public function __construct(
         private readonly SalidaStock $salida,
         private readonly AsignadorFefo $asignador,
+        private readonly CalculadorPendiente $pendiente,
     ) {}
 
     /**
@@ -67,6 +78,8 @@ final class DispensacionService
      * @throws IdempotencyKeyReutilizada (422, sin cambios)
      * @throws ValidationException (422 VALIDACION, bodega inactiva en una dispensación nueva, S-46)
      * @throws PrescripcionNoCorresponde (422)
+     * @throws PrescripcionNoVigente (422, sin cambios)
+     * @throws CantidadExcedePrescrito (422, sin cambios)
      * @throws StockInsuficiente (409, sin cambios)
      */
     public function crear(DatosDispensacion $datos, ClaveIdempotencia $clave, Closure $responder): RespuestaIdempotente
@@ -85,8 +98,8 @@ final class DispensacionService
         try {
             return DB::transaction(function () use ($datos, $clave, $responder, $hoy): RespuestaIdempotente {
                 // Solo lecturas sin bloqueo: valida la correspondencia antes de insertar (las FK
-                // compuestas darían 500 en vez de 422).
-                $prescritos = $this->itemsPrescritos($datos);
+                // compuestas darían 500 en vez de 422) y la vigencia (S-05).
+                $prescritos = $this->itemsPrescritos($datos, $hoy);
 
                 // RN-05: aquí irá requiereAutorizacion(items): si algún producto es de control especial,
                 // la dispensación nace PENDIENTE_AUTORIZACION y NO se llama a SalidaStock (S-06).
@@ -103,13 +116,22 @@ final class DispensacionService
                     'request_hash' => $clave->hash,
                 ])->save();
 
-                // RN-04: aquí irá, con los prescripcion_items bloqueados (lockForUpdate, orden por id;
-                // siempre DESPUÉS de insertar la cabecera, RN-09-AC6), la vigencia
-                // (PRESCRIPCION_NO_VIGENTE, S-05) y el tope acumulado por ítem
-                // (CANTIDAD_EXCEDE_PRESCRITO, sumando CONFIRMADA + PENDIENTE_AUTORIZACION).
+                // RN-04-AC8 tope acumulado: bloquea los ítems prescritos (paso 2 del orden global,
+                // por id) DESPUÉS de la cabecera (RN-09-AC6) y ANTES de insertar dispensacion_items
+                // y de bloquear existencias. Dos dispensaciones simultáneas del mismo ítem se
+                // serializan aquí; la segunda suma lo que confirmó la primera.
+                /** @var array<int, PrescripcionItem> $bloqueados */
+                $bloqueados = PrescripcionItem::query()
+                    ->whereKey(array_keys($prescritos))
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id')
+                    ->all();
+                $this->pendiente->exigirDentroDelTope($datos->items, $bloqueados);
 
                 foreach ($datos->items as $solicitado) {
-                    $prescrito = $prescritos[$solicitado->prescripcionItemId];
+                    $prescrito = $bloqueados[$solicitado->prescripcionItemId];
 
                     $item = new DispensacionItem;
                     $item->forceFill([
@@ -148,6 +170,8 @@ final class DispensacionService
      *
      * @throws ValidationException (422 VALIDACION, bodega inactiva, S-46)
      * @throws PrescripcionNoCorresponde (422)
+     * @throws PrescripcionNoVigente (422)
+     * @throws CantidadExcedePrescrito (422)
      * @throws StockInsuficiente (409)
      */
     public function previsualizar(DatosDispensacion $datos): Previsualizacion
@@ -155,9 +179,10 @@ final class DispensacionService
         $this->exigirBodegaActiva($datos->bodegaId);
 
         $hoy = Negocio::hoy();
-        $prescritos = $this->itemsPrescritos($datos);
+        $prescritos = $this->itemsPrescritos($datos, $hoy);
 
-        // RN-04 / RN-05: cuando existan, la previsualización aplicará las mismas validaciones.
+        // RN-04: mismo tope que crear(), sin bloquear (orientativo, S-43).
+        $this->pendiente->exigirDentroDelTope($datos->items, $prescritos);
         $existencias = Existencia::query()
             ->where('bodega_id', $datos->bodegaId)
             ->whereIn('producto_id', array_values(array_unique(array_map(
@@ -198,13 +223,16 @@ final class DispensacionService
     /**
      * Ítems prescritos pedidos, por id. Comprueba que la prescripción es del paciente y que cada
      * ítem es de la prescripción: lo exigen también las FK compuestas de la BD, así que sin esta
-     * comprobación el cliente recibiría un 500 en vez de 422 (RN-04-AC4).
+     * comprobación el cliente recibiría un 500 en vez de 422 (RN-04-AC4). Después, la vigencia
+     * (RN-04-AC2/AC3, S-05): la correspondencia va primero para no informar del estado de una
+     * prescripción ajena.
      *
      * @return array<int, PrescripcionItem>
      *
      * @throws PrescripcionNoCorresponde
+     * @throws PrescripcionNoVigente
      */
-    private function itemsPrescritos(DatosDispensacion $datos): array
+    private function itemsPrescritos(DatosDispensacion $datos, CarbonInterface $hoy): array
     {
         $prescripcion = Prescripcion::query()->findOrFail($datos->prescripcionId);
 
@@ -227,6 +255,10 @@ final class DispensacionService
 
         if ($ajenos !== []) {
             throw PrescripcionNoCorresponde::paraItems($prescripcion->id, $ajenos);
+        }
+
+        if (! $prescripcion->estaVigente($hoy)) {
+            throw PrescripcionNoVigente::para($prescripcion);
         }
 
         return $porId;
