@@ -1,0 +1,93 @@
+# Supuestos de diseño (S-01 … S-89)
+
+Decisiones tomadas donde el enunciado no fija el comportamiento. Las implementa el código y las comprueban los tests; los códigos de error están en [`contrato-api.md`](contrato-api.md).
+
+- **S-01** Un lote que vence hoy cuenta como vencido (`fecha_vencimiento <= hoy`). Criterio conservador de seguridad del paciente; "hoy" en zona America/Bogota.
+- **S-02** Si el stock vigente no alcanza, la dispensación responde 409 `STOCK_INSUFICIENTE` aunque haya stock vencido; `detalles` informa la cantidad vencida. `LOTE_VENCIDO` (422) se reserva para cuando el cliente nombra un lote concreto (traslados, entradas).
+- **S-03** Empate FEFO: a igual fecha de vencimiento, primero el lote de menor `lotes.id` (el registrado antes).
+- **S-04** La dispensación es todo o nada: no se entrega parcialmente lo que hay. El cliente puede pedir una cantidad menor (parcial acumulada de RN-04).
+- **S-05** La vigencia de la prescripción es inclusiva: es vigente si está `ACTIVA` y `hoy <= fecha_vencimiento`.
+- **S-06** RN-05 se implementa en dos pasos (crear pendiente → autorizar), no con credenciales de un segundo usuario en la misma petición. El stock se descuenta al autorizar, no se reserva. Si la dispensación mezcla productos con y sin control, queda pendiente en su totalidad. Un regente que dispensa también necesita a otro regente.
+- **S-07** Las cantidades son enteros positivos en unidades mínimas de dispensación; no hay fracciones.
+- **S-08** Solo el creador de un traslado puede solicitarlo, así que solicitante = creador.
+- **S-09** Un traslado no puede anularse una vez despachado (EN_TRANSITO); lo no recibido se gestiona con la recepción parcial y la discrepancia. Por tanto, la anulación nunca devuelve stock.
+- **S-10** Reutilizar un `Idempotency-Key` con cuerpo distinto responde 422 (criterio del borrador IETF *Idempotency-Key HTTP header*); 409 queda reservado para conflictos de estado y stock.
+- **S-11** El `Idempotency-Key` se guarda solo cuando la dispensación se crea; las respuestas de error no se reproducen. El alcance es por usuario y no caduca.
+- **S-12** Los traslados indican lote explícito por ítem (no FEFO); el destino recibe el mismo lote. Se acepta recibir un lote que venció en tránsito: entra al stock del destino pero no será dispensable.
+- **S-13** `admin` gestiona usuarios y catálogos (incluido el alta de pacientes y stock mínimo), pero no consulta inventario, kardex ni datos clínicos de pacientes.
+- **S-14** El stock mínimo se guarda en una tabla adicional `stock_minimos` (bodega + producto), no listada en las decisiones previas.
+- **S-15** El stock que cuenta para el mínimo es la suma de existencias de lotes no vencidos del producto en la bodega; la alerta salta si es estrictamente menor que el mínimo.
+- **S-16** Recepción de traslado: no se exige que quien recibe sea distinto de quien despachó (la prueba solo pide segregación en aprobación).
+- **S-17** Las entradas de inventario (compras) las registra el regente, con tipo de kardex `ENTRADA`.
+- **S-18** Lectura de catálogo: bodegas para auxiliar, regente, auditor y admin; productos además para médico. Gestión (alta/modificación) solo admin.
+- **S-19** La semilla incluye dos regentes (`regente@` y `regente2@farma.test`) para poder demostrar RN-05 y RN-08; el resto de roles tiene un usuario.
+- **S-20** Un producto aparece una sola vez por prescripción (UNIQUE prescripcion_id + producto_id).
+- **S-21** Los tokens de acceso expiran a las 12 h (720 min, un turno).
+- **S-22** Solo se registran entradas de inventario en bodegas y productos activos; si no, 422 `VALIDACION`.
+- **S-23** Una entrada que nombra un código de lote existente con otra fecha de vencimiento responde 422 `LOTE_NO_COINCIDE`; una entrada nunca cambia la fecha de un lote.
+- **S-24** Cada entrada admite de 1 a 1.000.000 unidades (entero; booleanos y decimales se rechazan con 422 `VALIDACION`).
+- **S-25** `GET /inventario` incluye existencias con cantidad 0, se pagina (25 por defecto, máx. 100) y un filtro con id inexistente devuelve 200 con lista vacía; filtros mal formados → 422 `VALIDACION`.
+- **S-26** Si una entrada nombra un lote existente con fecha distinta, responde `LOTE_NO_COINCIDE` aunque alguna de las dos fechas esté vencida; `LOTE_VENCIDO` solo aplica sin discrepancia de fecha.
+- **S-27** La validación de forma de los datos (422 `VALIDACION`) se evalúa antes que las reglas de negocio (p. ej. un lote vencido con cantidad 0 responde `VALIDACION`).
+- **S-28** `page` admite como máximo 1.000.000; una página válida pero vacía responde 200 con `data` vacío.
+- **S-29** La fecha de vencimiento válida va de 1900-01-01 a 2099-12-31; fuera de ese rango, 422 `VALIDACION`.
+- **S-30** El código de lote no admite caracteres de control ni de formato invisibles (categorías Unicode Cc y Cf) ni espacios en los extremos.
+- **S-31** Si el saldo de una existencia superaría 2.147.483.647, la entrada se rechaza con 422 `CANTIDAD_EXCEDE_MAXIMO` sin cambios.
+- **S-32** Un ajuste admite de −1.000.000 a 1.000.000 unidades (nunca 0); si dejaría el saldo negativo responde 409 `STOCK_INSUFICIENTE` sin cambios.
+- **S-33** El `motivo` del ajuste tiene de 10 a 500 caracteres (sin contar espacios de los extremos) y no admite caracteres Unicode Cc/Cf ni saltos de línea.
+- **S-34** Se permiten ajustes sobre lotes vencidos y sobre bodegas o productos inactivos: son correcciones (p. ej. dar de baja stock vencido).
+- **S-35** Entradas (compras) y ajustes no llevan documento origen; SALIDA_DISPENSACION referencia `dispensacion` + id y SALIDA_TRASLADO/ENTRADA_TRASLADO `traslado` + id, de forma obligatoria.
+- **S-36** En `GET /kardex`, `desde`/`hasta` son fechas Y-m-d inclusivas por día de Bogotá con `hasta >= desde`; admite además `existencia_id` y sigue S-25 y S-28.
+- **S-37** El kardex (listado y detalle) lo consultan los mismos roles que el inventario: auxiliar, regente y auditor.
+- **S-38** La semilla registra su stock como ENTRADA del regente sembrado, también en lotes vencidos; al resembrar solo registra la diferencia (ENTRADA si falta, AJUSTE con motivo si sobra).
+- **S-39** Si un intento de modificar el kardex llegara a una respuesta HTTP, el código es 409 `KARDEX_INMUTABLE`.
+- **S-40** El kardex tampoco admite `TRUNCATE` (ni directo ni en cascada): la BD lo rechaza con un trigger `BEFORE TRUNCATE`; además `saldo_anterior >= 0` por CHECK.
+- **S-41** Una dispensación lleva de 1 a 50 ítems sin repetir `prescripcion_item_id`; cada ítem solo admite `prescripcion_item_id` y `cantidad` (entero de 1 a 1.000.000); cualquier otra clave → 422 `VALIDACION`.
+- **S-42** Si falta stock, el 409 `STOCK_INSUFICIENTE` informa el primer ítem (en orden de la petición) que no alcanza; `vencido_no_dispensable` es la suma exacta del stock vencido de ese producto en esa bodega. Todos los ítems se evalúan antes de escribir.
+- **S-43** La previsualización es orientativa: no bloquea ni escribe y responde con los mismos códigos de error que la dispensación.
+- **S-44** Hasta RN-09, `Idempotency-Key` es opcional y se ignora.
+- **S-45** Prescripción que no es del paciente o ítem que no es de la prescripción → 422 `PRESCRIPCION_NO_CORRESPONDE` (adelanto de RN-04-AC4).
+- **S-46** No se dispensa desde una bodega inactiva → 422 `VALIDACION`.
+- **S-47** Los detalles de una dispensación se ordenan por ítem (orden de la petición) y por FEFO dentro de cada ítem.
+- **S-48** Un conflicto de concurrencia detectado por PostgreSQL (SQLSTATE 40P01, 40001 o 55P03) responde 409 `CONFLICTO_CONCURRENCIA` con `detalles.reintentable = true` y cabecera `Retry-After`, nunca 500; no se registra ningún cambio.
+- **S-49** `Idempotency-Key`: un único valor de 1 a 255 caracteres ASCII imprimibles, no solo espacios; distingue mayúsculas y no se recorta. Si falta, está vacía o viene repetida → 400 `IDEMPOTENCY_KEY_REQUERIDA`. La previsualización no la exige.
+- **S-50** Orden de comprobación en la dispensación: 401 → 403 → 400 (clave) → 422 (validación y reglas de negocio).
+- **S-51** El hash se calcula sobre el cuerpo validado y normalizado: `"5"` ≡ `5` solo en los ids; `cantidad` exige entero JSON (S-07). Claves desconocidas en la raíz o en los ítems → 422 `VALIDACION`. Cambiar el orden de los ítems cambia el hash.
+- **S-52** Un reintento con la misma clave y el mismo hash reproduce literalmente la respuesta original (status y cuerpo) con `Idempotent-Replayed: true`, aunque la dispensación haya cambiado después; no revalida reglas de negocio. El 422 `IDEMPOTENCY_KEY_REUTILIZADA` no lleva detalles.
+- **S-53** S-44 queda superado por RN-09: el `Idempotency-Key` es obligatorio.
+- **S-54** Precedencia de errores de negocio en dispensación y previsualización: `PRESCRIPCION_NO_CORRESPONDE` → `PRESCRIPCION_NO_VIGENTE` → `CANTIDAD_EXCEDE_PRESCRITO` (422) → `STOCK_INSUFICIENTE` (409). El tope de todos los ítems se evalúa antes que el stock de cualquiera.
+- **S-55** `CANTIDAD_EXCEDE_PRESCRITO` informa el primer ítem que excede (orden de la petición) con `prescripcion_item_id`, `pendiente` y `solicitado`; `PRESCRIPCION_NO_VIGENTE` lleva `prescripcion_id`, `estado` y `fecha_vencimiento`, sin datos personales.
+- **S-56** Orden global de bloqueo en dispensación: cabecera con la clave de idempotencia → `prescripcion_items` (id asc) → `existencias` (id asc). RN-05 lo respeta al autorizar.
+- **S-57** En autorizar y rechazar, el 403 `AUTORIZACION_MISMO_USUARIO` se evalúa antes que el 409 `TRANSICION_INVALIDA` (403 antes que 409, como S-50).
+- **S-58** Las salidas de kardex de una dispensación autorizada van a nombre del regente que autoriza; `dispensado_por_id` sigue siendo el creador.
+- **S-59** Al autorizar se revalidan bodega activa (S-46) y vigencia de la prescripción (S-05) dentro de la transacción; si fallan → 422 y la dispensación sigue pendiente. El rechazo no revalida nada.
+- **S-60** Precedencia al autorizar: 401 → 404 → 403 rol → 403 mismo usuario → 409 `TRANSICION_INVALIDA` → 422 bodega → 422 `PRESCRIPCION_NO_VIGENTE` → 409 `STOCK_INSUFICIENTE`.
+- **S-61** Crear una dispensación de control especial comprueba que el stock vigente alcanza en ese momento (409 `STOCK_INSUFICIENTE` si no), sin reservarlo; al autorizar se vuelve a comprobar.
+- **S-62** Crear un traslado no valida stock; se comprueba solo al despachar, sin reserva.
+- **S-63** Solo el creador edita los ítems de un BORRADOR (`PUT` reemplaza la lista); otro usuario → 403 (Policy y servicio).
+- **S-64** Un lote aparece una vez por traslado; 1 a 50 ítems; cantidad 1 a 1.000.000; claves desconocidas o lote de otro producto → 422 `VALIDACION`; origen = destino → 422 aunque los ids lleguen con tipos JSON distintos.
+- **S-65** Las bodegas activas solo se exigen al crear el traslado; despachar, recibir y resolver no lo revalidan.
+- **S-66** Precedencias en traslados: crear → forma, bodegas, lote del producto, `LOTE_VENCIDO`; despachar → 409 transición, 422 `LOTE_VENCIDO`, 409 stock; recibir → 422 forma (todos los ítems), 409 transición, 422 `CANTIDAD_RECIBIDA_EXCEDE`.
+- **S-67** Resolver una discrepancia genera un AJUSTE a nombre del regente con motivo de kardex «Discrepancia N del traslado M (TIPO): motivo» (motivo del usuario 10 a 400); crea la existencia si no existe y guarda el `movimiento_kardex_id`.
+- **S-68** `observaciones` del traslado: opcional, ≤ 1000 caracteres, admite tabulador y saltos de línea pero no otros caracteres de control; se devuelve tal cual y la Parte C la trata como texto no confiable.
+- **S-69** El listado de traslados va del más reciente al más antiguo, con filtros por estado, origen, destino y bodega.
+- **S-70** Recibir 0 unidades de un ítem no crea movimiento ni existencia en destino; solo la discrepancia.
+- **S-71** La segregación de RN-08 también aplica a resolver discrepancias: el solicitante del traslado no puede resolverlas → 403 `SEGREGACION_FUNCIONES` (Policy y servicio; sin CHECK porque cruza tablas). Recibir no exige segregación (S-16).
+- **S-72** Al aprobar un traslado, el 403 `SEGREGACION_FUNCIONES` se evalúa antes que el 409 `TRANSICION_INVALIDA` en cualquier estado posterior a la solicitud.
+- **S-73** Al resolver una discrepancia: 403 rol → 403 `SEGREGACION_FUNCIONES` → 409 si ya está resuelta.
+- **S-74** El creador que intenta aprobar su propio BORRADOR recibe 409 (aún no hay solicitante). El solicitante sí puede despachar su traslado.
+- **S-75** Los detalles del 403 `SEGREGACION_FUNCIONES` son `{traslado_id, accion}` (`aprobar` o `resolver_discrepancia`), sin datos personales.
+- **S-76** Máscaras de formato fijo para el auditor: documento `******` + 4 últimos (≤ 4 caracteres → todo asteriscos), nombres inicial + `***` por palabra, teléfono `*******` + 3 últimos (≤ 3 → todo asteriscos), correo `x***@***` (sin `@` → `***`), vacío → null, fecha de nacimiento → año como texto, dirección → null. `id` y `tipo_documento` nunca se enmascaran.
+- **S-77** `GET /dispensaciones/{id}` (con paciente anidado vía `PacienteResource`) para auxiliar, regente y auditor; médico y admin → 403.
+- **S-78** Una búsqueda de pacientes sin resultados responde 200 `[]` y no deja fila en la bitácora (una fila por paciente devuelto).
+- **S-79** Para el auditor, `observaciones` de la prescripción e `indicaciones` de sus ítems salen `null` (texto clínico libre).
+- **S-80** El correlation id lo genera siempre el servidor (UUID) y se devuelve en `X-Correlation-Id` y `X-Request-Id`; el id que envíe el cliente solo queda como dato informativo en el log, nunca en la bitácora.
+- **S-81** La fila de bitácora de una operación sensible se escribe en la misma transacción: si la operación falla, no queda fila.
+- **S-82** Si el trigger de inmutabilidad de la bitácora se dispara en una petición → 409 `BITACORA_INMUTABLE` (se registra en el log como error de código).
+- **S-83** En las alertas, `dias_restantes` = fecha_vencimiento − hoy (Bogotá): VENCIDO ≤ 0 (0 = vence hoy, negativo = días vencido); POR_VENCER de 1 al umbral.
+- **S-84** Filtros de alertas: `bodega_id`, `producto_id` y, en vencimientos, `tipo` ∈ {VENCIDO, POR_VENCER}; paginación S-25/S-28; `meta.hoy` y `meta.dias_alerta_vencimiento` informan el criterio aplicado.
+- **S-85** Orden: vencimientos por fecha ASC, lote id y existencia id; stock mínimo por faltante DESC, bodega, producto e id.
+- **S-86** Un stock mínimo de 0 nunca alerta; solo stock vencido → `actual = 0`; las alertas incluyen bodegas y productos inactivos (el stock físico sigue existiendo).
+- **S-87** El umbral `farma.dias_alerta_vencimiento` admite 0 (solo vencidos); un valor negativo se trata como 0.
+- **S-88** Todos los listados (incluidos bodegas y productos) aceptan `por_pagina` 1–100 (25 por defecto) y `page` ≤ 1.000.000.
+- **S-89** `GET /dispensaciones` (aprobado 2026-11-05): auxiliar, regente y auditor (mismos roles que el detalle, S-77; médico y admin → 403). Filtros combinables `estado` y `bodega_id`, paginación S-88, orden `created_at` ASC + id. Cada fila = dispensación + `dispensado_por {id, nombre}`, sin `paciente` (solo `paciente_id`) ni `detalles`; al no exponer datos personales, ni el 200 ni el 403 escriben en la bitácora RN-10.
