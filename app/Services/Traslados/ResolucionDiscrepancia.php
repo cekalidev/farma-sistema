@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Traslados;
 
+use App\Enums\AccionAuditoria;
+use App\Enums\EntidadAuditada;
 use App\Enums\EstadoDiscrepancia;
 use App\Enums\TipoMovimiento;
 use App\Enums\TipoResolucionDiscrepancia;
@@ -13,6 +15,7 @@ use App\Exceptions\Dominio\TransicionInvalida;
 use App\Models\Discrepancia;
 use App\Models\Existencia;
 use App\Models\TrasladoItem;
+use App\Services\Auditoria\Bitacora;
 use App\Services\Inventario\RegistradorKardex;
 use Illuminate\Support\Facades\DB;
 
@@ -41,7 +44,10 @@ final class ResolucionDiscrepancia
      */
     public const MOTIVO_MAXIMO = 400;
 
-    public function __construct(private readonly RegistradorKardex $kardex) {}
+    public function __construct(
+        private readonly RegistradorKardex $kardex,
+        private readonly Bitacora $bitacora,
+    ) {}
 
     /**
      * @throws SegregacionFunciones
@@ -86,6 +92,9 @@ final class ResolucionDiscrepancia
                 'resuelto_en' => now(),
                 'movimiento_kardex_id' => $movimientoId,
             ])->save();
+
+            // RN-10-AC9: operación sensible en la bitácora, en esta misma transacción.
+            $this->bitacora->operacion($usuarioId, AccionAuditoria::DiscrepanciaResolver, EntidadAuditada::Discrepancia, $bloqueada->id);
 
             return $bloqueada;
         });

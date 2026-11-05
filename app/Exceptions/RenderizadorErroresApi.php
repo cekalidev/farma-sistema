@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use App\Exceptions\Dominio\BitacoraInmutable;
 use App\Exceptions\Dominio\ExcepcionDominio;
 use App\Exceptions\Dominio\KardexInmutableException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -42,6 +43,8 @@ final class RenderizadorErroresApi
             // S-39: el trigger de inmutabilidad del kardex (23001 de movimientos_kardex_inmutable())
             // se responde igual que KardexInmutableException; sin SQL ni valores (solo el mensaje fijo).
             ErroresBaseDatos::esKardexInmutable($e) => $this->dominio(new KardexInmutableException),
+            // RN-10-AC10: igual para el trigger de la bitácora auditoria_accesos.
+            ErroresBaseDatos::esBitacoraInmutable($e) => $this->dominio(new BitacoraInmutable),
             // S-48: interbloqueo / serialización / bloqueo no disponible. La transacción se revirtió
             // entera (sin cambios): 409 reintentable, nunca 500. Sin SQL ni valores.
             ErroresBaseDatos::esConflictoConcurrencia($e) => $this->respuesta(

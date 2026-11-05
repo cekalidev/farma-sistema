@@ -29,6 +29,12 @@ class PrescripcionItem extends Model
     protected $fillable = ['prescripcion_id', 'producto_id', 'cantidad', 'indicaciones'];
 
     /**
+     * Pendiente por dispensar (RN-04), calculado al consultar (ConsultaPacienteService) con
+     * CalculadorPendiente. No es columna: null si no se ha calculado.
+     */
+    public ?int $pendienteCalculado = null;
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

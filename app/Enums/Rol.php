@@ -71,6 +71,19 @@ enum Rol: string
         };
     }
 
+    /**
+     * RN-10-AC1/AC3: ¿ve los datos personales del paciente sin enmascarar? Solo los roles
+     * asistenciales. El auditor (y cualquier otro rol) los ve enmascarados; el admin ni siquiera
+     * llega a verlos (403, S-13). Lo consulta solo PacienteResource.
+     */
+    public function veDatosCompletosDePaciente(): bool
+    {
+        return match ($this) {
+            self::AuxiliarFarmacia, self::RegenteFarmacia, self::Medico => true,
+            self::Auditor, self::Admin => false,
+        };
+    }
+
     public function puede(Habilidad $habilidad): bool
     {
         return in_array($habilidad, $this->habilidades(), true);

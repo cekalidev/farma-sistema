@@ -17,6 +17,9 @@ use App\Models\User;
  * (RN-05-AC4). El rol se evalúa primero para no revelar a otros roles quién creó la dispensación.
  * El servicio (AutorizacionDispensacion) repite la segunda comprobación y la BD la respalda con CHECK.
  *
+ * RN-10-AC4 detalle (anida al paciente, S-77): quien consulta pacientes y además inventario
+ * (auxiliar, regente, auditor). Médico y admin → 403.
+ *
  * Ojo: `autorizar` y `rechazar` no devuelven false para el creador, LANZAN AutorizacionMismoUsuario
  * (403 con su propio código). Están pensadas solo para el middleware `can:` de las rutas; no las
  * uses con `can()`/`Gate::allows()` de forma informativa (p. ej. para pintar un botón o en un
@@ -27,6 +30,12 @@ final class DispensacionPolicy
     public function create(User $user): bool
     {
         return $user->tieneHabilidad(Habilidad::DispensacionCrear);
+    }
+
+    public function view(User $user, Dispensacion $dispensacion): bool
+    {
+        return $user->tieneHabilidad(Habilidad::PacienteConsultar)
+            && $user->tieneHabilidad(Habilidad::InventarioConsultar);
     }
 
     /** @throws AutorizacionMismoUsuario */

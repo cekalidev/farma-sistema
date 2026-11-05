@@ -12,7 +12,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Dispensación (RN-02; RN-05: estado y datos de autorización o rechazo): cabecera, ítems solicitados y tramos FEFO por lote (`detalles`, en orden de
- * descuento), cada uno con su movimiento SALIDA_DISPENSACION. Del paciente solo el id (RN-10).
+ * descuento), cada uno con su movimiento SALIDA_DISPENSACION. Del paciente, el id; y en el detalle
+ * (GET /dispensaciones/{id}) el paciente anidado vía PacienteResource (RN-10-AC4: enmascarado para el
+ * auditor). Crear, autorizar y rechazar no lo cargan, así que no lo devuelven.
  *
  * @mixin Dispensacion
  */
@@ -27,6 +29,7 @@ class DispensacionResource extends JsonResource
             'id' => $this->id,
             'estado' => $this->estado->value,
             'paciente_id' => $this->paciente_id,
+            'paciente' => $this->whenLoaded('paciente', fn (): PacienteResource => new PacienteResource($this->paciente)),
             'prescripcion_id' => $this->prescripcion_id,
             'bodega_id' => $this->bodega_id,
             'dispensado_por_id' => $this->dispensado_por_id,

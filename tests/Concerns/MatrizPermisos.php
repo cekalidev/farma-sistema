@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Concerns;
 
+use App\Enums\AccionAuditoria;
+use App\Enums\EntidadAuditada;
 use App\Enums\Rol;
 use App\Enums\TipoMovimiento;
 use App\Enums\TrasladoEstado;
+use App\Models\AuditoriaAcceso;
 use App\Models\Bodega;
 use App\Models\Discrepancia;
 use App\Models\Dispensacion;
 use App\Models\Existencia;
 use App\Models\Lote;
 use App\Models\MovimientoKardex;
+use App\Models\Paciente;
 use App\Models\PrescripcionItem;
 use App\Models\Producto;
 use App\Models\Traslado;
 use App\Models\User;
+use App\Services\Auditoria\Bitacora;
 use App\Services\Dispensacion\ClaveIdempotencia;
 use App\Services\Dispensacion\DatosDispensacion;
 use App\Services\Dispensacion\DispensacionService;
@@ -550,6 +555,100 @@ final class MatrizPermisos
                 },
             ],
 
+            // --- RN-10: pacientes (paciente.consultar: auxiliar, regente, médico; auditor enmascarado;
+            // admin 403), detalle de dispensación (S-77) y bitácora (auditor, admin). Un 403 de paciente
+            // solo añade una fila DENEGADO: la instantánea cuenta las PERMITIDO.
+            'GET /api/v1/pacientes/{id}' => [
+                'metodo' => 'GET',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/pacientes/'.Paciente::factory()->create(['numero_documento' => '1234565678'])->id,
+                ],
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'medico', 'auditor'],
+                'instantanea' => fn (): array => self::accesosPermitidos(),
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    $documento = $usuario->rol === Rol::Auditor ? '******5678' : '1234565678';
+                    expect($r->json('data.numero_documento'))->toBe($documento)
+                        ->and(self::accesosPermitidos())->toBe([...$antes, 'PACIENTE_CONSULTAR']);
+                },
+            ],
+            'POST /api/v1/pacientes/buscar' => [
+                'metodo' => 'POST',
+                'preparar' => function (): array {
+                    $paciente = Paciente::factory()->create(['numero_documento' => '7777123456']);
+
+                    return [
+                        'uri' => '/api/v1/pacientes/buscar',
+                        'cuerpo' => ['tipo_documento' => $paciente->tipo_documento->value, 'numero_documento' => '7777123456'],
+                    ];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'medico', 'auditor'],
+                'instantanea' => fn (): array => self::accesosPermitidos(),
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    $documento = $usuario->rol === Rol::Auditor ? '******3456' : '7777123456';
+                    expect($r->json('data'))->toHaveCount(1)
+                        ->and($r->json('data.0.numero_documento'))->toBe($documento)
+                        ->and(self::accesosPermitidos())->toBe([...$antes, 'PACIENTE_BUSCAR']);
+                },
+            ],
+            'GET /api/v1/pacientes/{id}/prescripciones' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $item = PrescripcionItem::factory()->create(['cantidad' => 30]);
+
+                    return ['uri' => '/api/v1/pacientes/'.$item->prescripcion->paciente_id.'/prescripciones'];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'medico', 'auditor'],
+                'instantanea' => fn (): array => self::accesosPermitidos(),
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toHaveCount(1)
+                        ->and($r->json('data.0.items.0.cantidad_prescrita'))->toBe(30)
+                        ->and($r->json('data.0.items.0.cantidad_pendiente'))->toBe(30)
+                        ->and($r->json('data.0.paciente.enmascarado'))->toBe($usuario->rol === Rol::Auditor)
+                        ->and(self::accesosPermitidos())->toBe([...$antes, 'PACIENTE_PRESCRIPCIONES']);
+                },
+            ],
+            'GET /api/v1/dispensaciones/{id}' => [
+                'metodo' => 'GET',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/dispensaciones/'.self::dispensacionPendiente(20, 3)->id,
+                ],
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): array => [...self::estadoDispensaciones(), self::accesosPermitidos()],
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertOk();
+                    expect($r->json('data.estado'))->toBe('PENDIENTE_AUTORIZACION')
+                        ->and($r->json('data.paciente.id'))->toBe($r->json('data.paciente_id'))
+                        ->and($r->json('data.paciente.enmascarado'))->toBe($usuario->rol === Rol::Auditor)
+                        ->and(self::accesosPermitidos())->toBe([...$antes[3], 'DISPENSACION_CONSULTAR']);
+                },
+            ],
+            'GET /api/v1/auditoria' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $usuario = User::factory()->create(['rol' => Rol::AuxiliarFarmacia]);
+                    DB::transaction(fn () => app(Bitacora::class)->operacion(
+                        $usuario->id,
+                        AccionAuditoria::TrasladoAnular,
+                        EntidadAuditada::Traslado,
+                        99,
+                    ));
+
+                    return ['uri' => '/api/v1/auditoria'];
+                },
+                'permitidos' => ['auditor', 'admin'],
+                'instantanea' => fn (): int => AuditoriaAcceso::query()->count(),
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toHaveCount(1)
+                        ->and($r->json('data.0.accion'))->toBe('TRASLADO_ANULAR')
+                        ->and($r->json('meta.total'))->toBe(1)
+                        ->and(AuditoriaAcceso::query()->count())->toBe($antes);
+                },
+            ],
+
             // --- RN-xx: añadir aquí los endpoints de cada RN siguiente ------------------------
         ];
     }
@@ -614,6 +713,17 @@ final class MatrizPermisos
         );
 
         return Dispensacion::query()->where('dispensado_por_id', $auxiliar->id)->sole();
+    }
+
+    /**
+     * Acciones PERMITIDO de la bitácora en orden de inserción: un 403 (DENEGADO) no la cambia.
+     *
+     * @return list<string>
+     */
+    private static function accesosPermitidos(): array
+    {
+        return AuditoriaAcceso::query()->where('resultado', 'PERMITIDO')->orderBy('id')->pluck('accion')
+            ->map(fn ($a): string => $a->value)->values()->all();
     }
 
     /** @return array{0: list<string>, 1: int, 2: int} estados, movimientos de kardex y stock total */

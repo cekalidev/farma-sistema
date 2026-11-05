@@ -1,13 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuditoriaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodegaController;
 use App\Http\Controllers\Api\V1\DiscrepanciaController;
 use App\Http\Controllers\Api\V1\DispensacionController;
 use App\Http\Controllers\Api\V1\InventarioController;
 use App\Http\Controllers\Api\V1\KardexController;
+use App\Http\Controllers\Api\V1\PacienteController;
 use App\Http\Controllers\Api\V1\ProductoController;
 use App\Http\Controllers\Api\V1\TrasladoController;
+use App\Http\Middleware\RegistrarAccesoDenegado;
+use App\Models\AuditoriaAcceso;
 use App\Models\Bodega;
 use App\Models\Dispensacion;
 use App\Models\Existencia;
@@ -68,5 +72,21 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // RN-07-AC12: resolver discrepancias con traslado.aprobar (regente) que no solicitó el traslado (S-71).
         Route::post('discrepancias/{discrepancia}/resolver', [DiscrepanciaController::class, 'resolver'])->can('resolver', 'discrepancia')->name('discrepancias.resolver');
+
+        // RN-10 pacientes: paciente.consultar (auxiliar, regente, médico; auditor enmascarado por
+        // PacienteResource; admin 403). La búsqueda va por POST: el documento nunca viaja en la URL
+        // (AC7). Cada 403 queda en la bitácora como DENEGADO (middleware antes que `can:`); los
+        // accesos permitidos los registra ConsultaPacienteService.
+        Route::middleware(RegistrarAccesoDenegado::ALIAS)->group(function (): void {
+            Route::post('pacientes/buscar', [PacienteController::class, 'buscar'])->name('pacientes.buscar');
+            Route::get('pacientes/{paciente}', [PacienteController::class, 'show'])->can('view', 'paciente')->name('pacientes.show');
+            Route::get('pacientes/{paciente}/prescripciones', [PacienteController::class, 'prescripciones'])->can('view', 'paciente')->name('pacientes.prescripciones');
+
+            // RN-10-AC4: detalle de dispensación con el paciente anidado (auxiliar, regente, auditor; S-77).
+            Route::get('dispensaciones/{dispensacion}', [DispensacionController::class, 'show'])->can('view', 'dispensacion')->name('dispensaciones.show');
+        });
+
+        // RN-10-AC10: bitácora de solo lectura (auditoria.consultar: auditor, admin).
+        Route::get('auditoria', [AuditoriaController::class, 'index'])->can('viewAny', AuditoriaAcceso::class)->name('auditoria.index');
     });
 });

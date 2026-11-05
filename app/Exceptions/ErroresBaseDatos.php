@@ -43,6 +43,9 @@ final class ErroresBaseDatos
      */
     public const MARCA_KARDEX_INMUTABLE = 'movimientos_kardex es inmutable';
 
+    /** Texto fijo del RAISE de auditoria_accesos_inmutable() (migración create_auditoria_accesos_table). */
+    public const MARCA_BITACORA_INMUTABLE = 'auditoria_accesos es inmutable';
+
     /** Marcos de pila que se registran (solo archivo:línea, nunca argumentos). */
     private const MARCOS_EN_LOG = 15;
 
@@ -113,6 +116,21 @@ final class ErroresBaseDatos
         }
 
         return str_contains(self::mensajeDriver($consulta), self::MARCA_KARDEX_INMUTABLE);
+    }
+
+    /**
+     * ¿El fallo es el trigger de inmutabilidad de la bitácora (RN-10-AC10)? Si llega a una
+     * petición se responde 409 BITACORA_INMUTABLE, como S-39 para el kardex.
+     */
+    public static function esBitacoraInmutable(Throwable $e): bool
+    {
+        $consulta = self::consultaFallida($e);
+
+        if ($consulta === null || (string) $consulta->getCode() !== self::RESTRICCION_VIOLADA) {
+            return false;
+        }
+
+        return str_contains(self::mensajeDriver($consulta), self::MARCA_BITACORA_INMUTABLE);
     }
 
     /**

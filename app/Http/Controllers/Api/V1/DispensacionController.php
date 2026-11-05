@@ -12,6 +12,7 @@ use App\Http\Resources\DispensacionResource;
 use App\Http\Resources\PrevisualizacionDispensacionResource;
 use App\Models\Dispensacion;
 use App\Services\Dispensacion\AutorizacionDispensacion;
+use App\Services\Dispensacion\ConsultaDispensacionService;
 use App\Services\Dispensacion\DispensacionService;
 use App\Services\Dispensacion\RespuestaIdempotente;
 use Illuminate\Auth\AuthenticationException;
@@ -23,7 +24,17 @@ class DispensacionController extends Controller
     public function __construct(
         private readonly DispensacionService $dispensaciones,
         private readonly AutorizacionDispensacion $autorizacion,
+        private readonly ConsultaDispensacionService $consulta,
     ) {}
+
+    /** RN-10-AC4: detalle con el paciente anidado (enmascarado para el auditor). Rol: Policy de la ruta. */
+    public function show(Request $request, Dispensacion $dispensacion): DispensacionResource
+    {
+        return new DispensacionResource($this->consulta->detalle(
+            $dispensacion,
+            $request->user()->id ?? throw new AuthenticationException,
+        ));
+    }
 
     /**
      * RN-09: la respuesta (status + JSON literal) la guarda el servicio con la dispensación; un

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Traslados;
 
+use App\Enums\AccionAuditoria;
 use App\Enums\AccionTraslado;
+use App\Enums\EntidadAuditada;
 use App\Enums\Habilidad;
 use App\Enums\TrasladoEstado;
 use App\Exceptions\Dominio\LoteVencido;
@@ -16,6 +18,7 @@ use App\Models\Lote;
 use App\Models\Traslado;
 use App\Models\TrasladoItem;
 use App\Models\User;
+use App\Services\Auditoria\Bitacora;
 use App\Support\Negocio;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +43,10 @@ final class TrasladoService
 
     public const MENSAJE_LOTE_NO_CORRESPONDE = 'El lote no pertenece al producto.';
 
-    public function __construct(private readonly BloqueoTraslado $bloqueo) {}
+    public function __construct(
+        private readonly BloqueoTraslado $bloqueo,
+        private readonly Bitacora $bitacora,
+    ) {}
 
     /**
      * RN-07-AC1/AC9, RN-01-AC6: 201 en BORRADOR, sin stock ni kardex.
@@ -141,7 +147,12 @@ final class TrasladoService
             if ($bloqueado->solicitado_por_id === $usuarioId) {
                 throw SegregacionFunciones::paraTraslado($bloqueado->id, SegregacionFunciones::ACCION_APROBAR);
             }
-        });
+        }, fn (Traslado $aprobado) => $this->bitacora->operacion(
+            $usuarioId,
+            AccionAuditoria::TrasladoAprobar,
+            EntidadAuditada::Traslado,
+            $aprobado->id,
+        ));
     }
 
     /**
@@ -161,7 +172,12 @@ final class TrasladoService
             'anulado_por_id' => $usuario->id,
             'anulado_en' => now(),
             'motivo_anulacion' => $motivo,
-        ]);
+        ], despues: fn (Traslado $anulado) => $this->bitacora->operacion(
+            $usuario->id,
+            AccionAuditoria::TrasladoAnular,
+            EntidadAuditada::Traslado,
+            $anulado->id,
+        ));
     }
 
     /**
@@ -181,15 +197,20 @@ final class TrasladoService
     /**
      * @param  array<string, mixed>  $columnas
      * @param  (\Closure(Traslado): void)|null  $antesDelEstado  comprobación sobre la fila bloqueada, previa al 409
+     * @param  (\Closure(Traslado): void)|null  $despues  tras guardar, en la misma transacción (bitácora RN-10-AC9)
      *
      * @throws TransicionInvalida
      */
-    private function transicionar(Traslado $traslado, AccionTraslado $accion, array $columnas, ?\Closure $antesDelEstado = null): Traslado
+    private function transicionar(Traslado $traslado, AccionTraslado $accion, array $columnas, ?\Closure $antesDelEstado = null, ?\Closure $despues = null): Traslado
     {
-        $actualizado = DB::transaction(function () use ($traslado, $accion, $columnas, $antesDelEstado): Traslado {
+        $actualizado = DB::transaction(function () use ($traslado, $accion, $columnas, $antesDelEstado, $despues): Traslado {
             $bloqueado = $this->bloqueo->bloquear($traslado, $accion, $antesDelEstado);
 
             $bloqueado->forceFill(['estado' => $bloqueado->estado->tras($accion), ...$columnas])->save();
+
+            if ($despues !== null) {
+                $despues($bloqueado);
+            }
 
             return $bloqueado;
         });

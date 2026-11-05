@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Dispensacion;
 
+use App\Enums\AccionAuditoria;
+use App\Enums\EntidadAuditada;
 use App\Enums\EstadoDispensacion;
 use App\Exceptions\Dominio\AutorizacionMismoUsuario;
 use App\Exceptions\Dominio\PrescripcionNoVigente;
@@ -11,6 +13,7 @@ use App\Exceptions\Dominio\StockInsuficiente;
 use App\Exceptions\Dominio\TransicionInvalida;
 use App\Models\Dispensacion;
 use App\Models\Prescripcion;
+use App\Services\Auditoria\Bitacora;
 use App\Support\Negocio;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +45,10 @@ final class AutorizacionDispensacion
 
     public const ACCION_RECHAZAR = 'rechazar';
 
-    public function __construct(private readonly SalidaStock $salida) {}
+    public function __construct(
+        private readonly SalidaStock $salida,
+        private readonly Bitacora $bitacora,
+    ) {}
 
     /**
      * RN-05-AC3: CONFIRMADA, autorizado_por_id/autorizado_en y salida FEFO con kardex (usuario del
@@ -79,8 +85,8 @@ final class AutorizacionDispensacion
                 'autorizado_en' => now(),
             ])->save();
 
-            // RN-10: aquí se registrará la autorización en la bitácora de operaciones sensibles
-            // (RN-10-AC9: quién, qué dispensación, cuándo), en esta misma transacción.
+            // RN-10-AC9: operación sensible en la bitácora, en esta misma transacción.
+            $this->bitacora->operacion($usuarioId, AccionAuditoria::DispensacionAutorizar, EntidadAuditada::Dispensacion, $bloqueada->id, $bloqueada->paciente_id);
 
             return $bloqueada;
         });
@@ -109,7 +115,8 @@ final class AutorizacionDispensacion
                 'motivo_rechazo' => $motivo,
             ])->save();
 
-            // RN-10: aquí se registrará el rechazo en la bitácora de operaciones sensibles (RN-10-AC9).
+            // RN-10-AC9: operación sensible en la bitácora, en esta misma transacción.
+            $this->bitacora->operacion($usuarioId, AccionAuditoria::DispensacionRechazar, EntidadAuditada::Dispensacion, $bloqueada->id, $bloqueada->paciente_id);
 
             return $bloqueada;
         });
