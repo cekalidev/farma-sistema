@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodegaController;
 use App\Http\Controllers\Api\V1\InventarioController;
+use App\Http\Controllers\Api\V1\KardexController;
 use App\Http\Controllers\Api\V1\ProductoController;
 use App\Models\Bodega;
 use App\Models\Existencia;
+use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use Illuminate\Support\Facades\Route;
 
@@ -31,5 +33,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // RN-01 inventario: consulta con inventario.consultar; entradas con inventario.registrar (S-17).
         Route::get('inventario', [InventarioController::class, 'index'])->can('viewAny', Existencia::class)->name('inventario.index');
         Route::post('inventario/entradas', [InventarioController::class, 'storeEntrada'])->can('registrarEntrada', Existencia::class)->name('inventario.entradas.store');
+
+        // RN-06 kardex: ajustes con inventario.registrar (regente); consulta con inventario.consultar.
+        // Sin rutas PUT/PATCH/DELETE: el router responde 405 METODO_NO_PERMITIDO (RN-06-AC5).
+        Route::post('inventario/ajustes', [InventarioController::class, 'storeAjuste'])->can('registrarAjuste', Existencia::class)->name('inventario.ajustes.store');
+        Route::get('kardex', [KardexController::class, 'index'])->can('viewAny', MovimientoKardex::class)->name('kardex.index');
+        Route::get('kardex/{movimiento}', [KardexController::class, 'show'])->can('view', 'movimiento')->name('kardex.show');
     });
 });

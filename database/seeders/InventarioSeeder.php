@@ -4,21 +4,30 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\TipoMovimiento;
 use App\Models\Bodega;
 use App\Models\Existencia;
 use App\Models\Lote;
 use App\Models\Producto;
 use App\Models\StockMinimo;
+use App\Models\User;
+use App\Services\Inventario\RegistradorKardex;
 use App\Support\Negocio;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Lotes con vencimiento relativo a hoy (Bogotá), existencias y stock mínimo.
  * Incluye lotes vencidos (−20 y −3 días) y lotes que vencen en < 30 días (+10, +25).
  *
- * TEMPORAL hasta RN-06: la carga inicial escribe la cantidad directamente con forceFill
- * (Existencia no admite `cantidad` en asignación masiva) porque el kardex y el servicio de
- * entradas aún no existen. Cuando existan, este seeder deberá pasar por ese servicio.
+ * El stock inicial entra por RegistradorKardex (RN-06-AC2): cada existencia recibe un movimiento
+ * ENTRADA del regente sembrado, en una transacción con la existencia bloqueada, de modo que
+ * SUM(movimientos.cantidad) = existencias.cantidad. No se usa EntradaInventarioService porque
+ * rechaza lotes vencidos, y la semilla necesita stock en lotes ya vencidos (stock comprado antes
+ * de vencer).
+ *
+ * Repetible sobre una BD ya sembrada: solo registra la diferencia con la cantidad de referencia
+ * (ENTRADA si falta stock, AJUSTE con motivo si sobra); si ya coincide, no escribe nada.
  */
 class InventarioSeeder extends Seeder
 {
@@ -66,11 +75,18 @@ class InventarioSeeder extends Seeder
         'MORF10' => ['FC' => 20, 'FU' => 10, 'BH' => 5],
     ];
 
+    /** Usuario que figura en el kardex como autor de la carga inicial (UsuariosSeeder). */
+    private const USUARIO_CARGA = 'regente@farma.test';
+
+    private const MOTIVO_REAJUSTE = 'Reajuste de la semilla a la cantidad de referencia';
+
     public function run(): void
     {
         $hoy = Negocio::hoy();
-        $bodegas = Bodega::query()->pluck('id', 'codigo');
-        $productos = Producto::query()->pluck('id', 'codigo');
+        $bodegas = Bodega::query()->get(['id', 'codigo'])->mapWithKeys(fn (Bodega $b): array => [$b->codigo => $b->id])->all();
+        $productos = Producto::query()->get(['id', 'codigo'])->mapWithKeys(fn (Producto $p): array => [$p->codigo => $p->id])->all();
+        $regenteId = User::query()->porCorreo(self::USUARIO_CARGA)->firstOrFail()->id;
+        $kardex = app(RegistradorKardex::class);
 
         foreach (self::LOTES as $codigoProducto => $lotes) {
             $productoId = $productos[$codigoProducto];
@@ -82,10 +98,7 @@ class InventarioSeeder extends Seeder
                 );
 
                 foreach ($cantidades as $codigoBodega => $cantidad) {
-                    Existencia::query()
-                        ->firstOrNew(['bodega_id' => $bodegas[$codigoBodega], 'producto_id' => $productoId, 'lote_id' => $lote->id])
-                        ->forceFill(['cantidad' => $cantidad])
-                        ->save();
+                    $this->fijarCantidad($kardex, $regenteId, $bodegas[$codigoBodega], $productoId, $lote->id, $cantidad);
                 }
             }
         }
@@ -98,5 +111,22 @@ class InventarioSeeder extends Seeder
                 );
             }
         }
+    }
+
+    private function fijarCantidad(RegistradorKardex $kardex, int $usuarioId, int $bodegaId, int $productoId, int $loteId, int $cantidad): void
+    {
+        DB::transaction(function () use ($kardex, $usuarioId, $bodegaId, $productoId, $loteId, $cantidad): void {
+            $terna = ['bodega_id' => $bodegaId, 'producto_id' => $productoId, 'lote_id' => $loteId];
+            Existencia::query()->firstOrCreate($terna);
+
+            $existencia = Existencia::query()->where($terna)->lockForUpdate()->firstOrFail();
+            $diferencia = $cantidad - $existencia->cantidad;
+
+            if ($diferencia > 0) {
+                $kardex->registrar(TipoMovimiento::Entrada, $existencia, $diferencia, $usuarioId);
+            } elseif ($diferencia < 0) {
+                $kardex->registrar(TipoMovimiento::Ajuste, $existencia, $diferencia, $usuarioId, self::MOTIVO_REAJUSTE);
+            }
+        });
     }
 }

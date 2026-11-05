@@ -9,7 +9,7 @@ use App\Models\User;
 
 /**
  * Inventario (RN-01). Consultar: inventario.consultar (auxiliar, regente, auditor).
- * Registrar entradas: inventario.registrar (solo regente, S-17).
+ * Registrar entradas (S-17) y ajustes (RN-06-AC6): inventario.registrar (solo regente).
  */
 final class ExistenciaPolicy
 {
@@ -19,6 +19,11 @@ final class ExistenciaPolicy
     }
 
     public function registrarEntrada(User $user): bool
+    {
+        return $user->tieneHabilidad(Habilidad::InventarioRegistrar);
+    }
+
+    public function registrarAjuste(User $user): bool
     {
         return $user->tieneHabilidad(Habilidad::InventarioRegistrar);
     }

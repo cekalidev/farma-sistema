@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\Dominio\ExcepcionDominio;
+use App\Exceptions\Dominio\KardexInmutableException;
 use App\Exceptions\ErroresBaseDatos;
 use App\Exceptions\RenderizadorErroresApi;
 use Illuminate\Foundation\Application;
@@ -19,7 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Errores de negocio esperados: no se reportan al log (evita ruido y datos de entrada).
-        $exceptions->dontReport([ExcepcionDominio::class]);
+        // Excepto KardexInmutableException: ninguna ruta la provoca, si ocurre es un fallo de código.
+        $exceptions->dontReportWhen(
+            fn (Throwable $e): bool => $e instanceof ExcepcionDominio && ! $e instanceof KardexInmutableException,
+        );
 
         // Errores de BD: se registran con SQLSTATE, conexión y ruta, nunca con el SQL ni los
         // bindings (RN-10: pueden ser datos de pacientes). Devuelve false → sin registro por defecto.

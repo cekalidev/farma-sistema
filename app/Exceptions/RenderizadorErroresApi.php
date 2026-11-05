@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use App\Exceptions\Dominio\ExcepcionDominio;
+use App\Exceptions\Dominio\KardexInmutableException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -34,10 +35,13 @@ final class RenderizadorErroresApi
         }
 
         return match (true) {
-            $e instanceof ExcepcionDominio => $this->respuesta($e->codigo(), $e->getMessage(), $e->status(), $e->detalles()),
+            $e instanceof ExcepcionDominio => $this->dominio($e),
             $e instanceof AuthenticationException => $this->respuesta('NO_AUTENTICADO', 'No autenticado.', 401),
             $e instanceof AuthorizationException,
             $e instanceof AccessDeniedHttpException => $this->respuesta('NO_AUTORIZADO', 'No tiene permiso para realizar esta acción.', 403),
+            // S-39: el trigger de inmutabilidad del kardex (23001 de movimientos_kardex_inmutable())
+            // se responde igual que KardexInmutableException; sin SQL ni valores (solo el mensaje fijo).
+            ErroresBaseDatos::esKardexInmutable($e) => $this->dominio(new KardexInmutableException),
             $e instanceof ValidationException => $this->respuesta('VALIDACION', 'Los datos enviados no son válidos.', 422, ['campos' => $e->errors()]),
             // Red de seguridad (los ids de ruta ya se filtran con Route::pattern → 404). Si un valor
             // del cliente llega a la BD sin poder convertirse (22P02, o 22003 con un binding que
@@ -52,6 +56,11 @@ final class RenderizadorErroresApi
             $e instanceof HttpExceptionInterface => $this->respuesta('ERROR_HTTP', 'La solicitud no pudo procesarse.', $e->getStatusCode(), [], $e->getHeaders()),
             default => $this->respuesta('ERROR_INTERNO', 'Error interno del servidor.', 500),
         };
+    }
+
+    private function dominio(ExcepcionDominio $e): JsonResponse
+    {
+        return $this->respuesta($e->codigo(), $e->getMessage(), $e->status(), $e->detalles());
     }
 
     /**

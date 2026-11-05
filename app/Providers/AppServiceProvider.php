@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         'producto',
         'lote',
         'existencia',
+        'movimiento',
         'paciente',
         'prescripcion',
         'dispensacion',

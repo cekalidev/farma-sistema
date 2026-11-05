@@ -28,6 +28,7 @@ class EntradaResource extends JsonResource
                 'saldo_anterior' => $this->resource->saldoAnterior,
                 'saldo_posterior' => $this->resource->saldoPosterior,
                 'lote_creado' => $this->resource->loteCreado,
+                'movimiento_id' => $this->resource->movimientoId,
             ],
         ];
     }

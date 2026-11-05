@@ -23,4 +23,19 @@ final class Negocio
     {
         return CarbonImmutable::now(self::zonaHoraria())->startOfDay();
     }
+
+    /**
+     * Instante en que empieza el día `Y-m-d` (más `$dias`) en la zona de negocio, expresado en la
+     * zona de la aplicación, que es en la que Eloquent guarda los timestamps (columnas sin zona).
+     * Sirve para filtrar `created_at` por días de negocio.
+     */
+    public static function inicioDelDia(string $fecha, int $dias = 0): CarbonImmutable
+    {
+        $inicio = CarbonImmutable::createFromFormat('!Y-m-d', $fecha, self::zonaHoraria());
+        if (! $inicio instanceof CarbonImmutable) {
+            throw new \InvalidArgumentException('Fecha con formato distinto de Y-m-d.');
+        }
+
+        return $inicio->addDays($dias)->setTimezone(Config::string('app.timezone'));
+    }
 }

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Concerns;
 
+use App\Enums\Rol;
+use App\Enums\TipoMovimiento;
 use App\Models\Bodega;
 use App\Models\Existencia;
 use App\Models\Lote;
+use App\Models\MovimientoKardex;
 use App\Models\Producto;
 use App\Models\User;
+use App\Services\Inventario\RegistradorKardex;
 use App\Support\Negocio;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 
 /**
@@ -191,8 +196,88 @@ final class MatrizPermisos
                 },
             ],
 
+            // --- RN-06: kardex (consultar: auxiliar, regente, auditor; ajustes: regente) -----------
+            'POST /api/v1/inventario/ajustes' => [
+                'metodo' => 'POST',
+                'preparar' => function (): array {
+                    $existencia = self::existenciaConKardex(30);
+
+                    return [
+                        'uri' => '/api/v1/inventario/ajustes',
+                        'cuerpo' => [
+                            'existencia_id' => $existencia->id,
+                            'cantidad' => -5,
+                            'motivo' => 'Conteo físico de matriz con faltante',
+                        ],
+                    ];
+                },
+                'permitidos' => ['regente_farmacia'],
+                'instantanea' => fn (): array => [
+                    MovimientoKardex::query()->count(),
+                    (int) Existencia::query()->sum('cantidad'),
+                ],
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertCreated();
+                    $datos = cuerpoDatos($r);
+                    expect($datos['tipo'] ?? null)->toBe('AJUSTE')
+                        ->and($datos['cantidad'] ?? null)->toBe(-5)
+                        ->and($datos['usuario_id'] ?? null)->toBe($usuario->id)
+                        ->and(MovimientoKardex::query()->count())->toBe($antes[0] + 1)
+                        ->and((int) Existencia::query()->sum('cantidad'))->toBe($antes[1] - 5);
+                },
+            ],
+            'GET /api/v1/kardex' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $existencia = self::existenciaConKardex(12);
+                    self::existenciaConKardex(7); // otro producto: el filtro lo excluye
+
+                    return ['uri' => '/api/v1/kardex?producto_id='.$existencia->producto_id];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): int => MovimientoKardex::query()->count(),
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toBeArray()->toHaveCount(1)
+                        ->and($r->json('data.0.cantidad'))->toBe(12)
+                        ->and(MovimientoKardex::query()->count())->toBe($antes);
+                },
+            ],
+            'GET /api/v1/kardex/{id}' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    self::existenciaConKardex(9);
+
+                    return ['uri' => '/api/v1/kardex/'.MovimientoKardex::query()->sole()->id];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): int => MovimientoKardex::query()->count(),
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect(cuerpoDatos($r)['id'] ?? null)->toBe(MovimientoKardex::query()->sole()->id)
+                        ->and(cuerpoDatos($r)['tipo'] ?? null)->toBe('ENTRADA');
+                },
+            ],
+
             // --- RN-xx: añadir aquí los endpoints de cada RN siguiente ------------------------
         ];
+    }
+
+    /**
+     * Existencia en 0 que recibe `cantidad` por el camino real (RegistradorKardex, movimiento
+     * ENTRADA), para que el kardex cuadre con el stock (RN-06-AC2).
+     */
+    private static function existenciaConKardex(int $cantidad): Existencia
+    {
+        $existencia = Existencia::factory()->create(['cantidad' => 0]);
+        $regente = User::factory()->create(['rol' => Rol::RegenteFarmacia]);
+
+        DB::transaction(function () use ($existencia, $cantidad, $regente): void {
+            $bloqueada = Existencia::query()->whereKey($existencia->id)->lockForUpdate()->firstOrFail();
+            app(RegistradorKardex::class)->registrar(TipoMovimiento::Entrada, $bloqueada, $cantidad, $regente->id);
+        });
+
+        return $existencia->refresh();
     }
 
     /** @return array<string, array<string, mixed>> */

@@ -22,6 +22,15 @@ final class ErroresBaseDatos
     /** 22003 numeric_value_out_of_range. */
     public const FUERA_DE_RANGO = '22003';
 
+    /** 23001 restrict_violation: ERRCODE del trigger de inmutabilidad del kardex. */
+    public const RESTRICCION_VIOLADA = '23001';
+
+    /**
+     * Texto fijo del RAISE de la función movimientos_kardex_inmutable() (migración
+     * create_movimientos_kardex_table). Distingue ese trigger de cualquier otro 23001.
+     */
+    public const MARCA_KARDEX_INMUTABLE = 'movimientos_kardex es inmutable';
+
     /** Marcos de pila que se registran (solo archivo:línea, nunca argumentos). */
     private const MARCOS_EN_LOG = 15;
 
@@ -60,6 +69,26 @@ final class ErroresBaseDatos
             self::FUERA_DE_RANGO => self::algunBindingVieneDelCliente($consulta, $request),
             default => false,
         };
+    }
+
+    /**
+     * ¿El fallo es el trigger de inmutabilidad del kardex (RN-06-AC4) rechazando un UPDATE, DELETE
+     * o TRUNCATE? S-39: si llega a una petición se responde 409 KARDEX_INMUTABLE. Solo ese trigger:
+     * exige el SQLSTATE 23001 y el mensaje propio de movimientos_kardex_inmutable().
+     */
+    public static function esKardexInmutable(Throwable $e): bool
+    {
+        $consulta = self::consultaFallida($e);
+
+        if ($consulta === null || (string) $consulta->getCode() !== self::RESTRICCION_VIOLADA) {
+            return false;
+        }
+
+        $mensajeDriver = is_array($consulta->errorInfo) && is_string($consulta->errorInfo[2] ?? null)
+            ? $consulta->errorInfo[2]
+            : '';
+
+        return str_contains($mensajeDriver, self::MARCA_KARDEX_INMUTABLE);
     }
 
     /**

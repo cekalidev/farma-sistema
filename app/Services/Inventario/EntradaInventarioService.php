@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Inventario;
 
+use App\Enums\TipoMovimiento;
 use App\Exceptions\Dominio\CantidadExcedeMaximo;
 use App\Exceptions\Dominio\LoteNoCoincide;
 use App\Exceptions\Dominio\LoteVencido;
@@ -16,18 +17,18 @@ use Illuminate\Support\Facades\DB;
  * RN-01-AC8 / S-17: entrada de stock (compra) en bodega + producto + lote.
  *
  * Todo ocurre en una sola transacción: resolver/crear el lote, crear la existencia si no
- * existe, bloquearla (lockForUpdate) y sumar la cantidad sobre el valor bloqueado.
+ * existe, bloquearla (lockForUpdate) y sumar la cantidad sobre el valor bloqueado con su
+ * movimiento de kardex ENTRADA (RegistradorKardex, RN-06).
  */
 final class EntradaInventarioService
 {
-    /** Máximo de la columna `existencias.cantidad` (integer de PostgreSQL). */
-    public const SALDO_MAXIMO = 2_147_483_647;
+    public function __construct(private readonly RegistradorKardex $kardex) {}
 
     /**
      * @throws LoteNoCoincide si el lote ya existe para el producto con otra fecha de vencimiento
      *                        (S-23; tiene prioridad sobre LOTE_VENCIDO).
      * @throws LoteVencido si el lote (existente o el que se crearía) vence <= hoy en Bogotá (S-01).
-     * @throws CantidadExcedeMaximo si el saldo resultante superaría SALDO_MAXIMO.
+     * @throws CantidadExcedeMaximo si el saldo resultante superaría RegistradorKardex::SALDO_MAXIMO.
      */
     public function registrar(DatosEntrada $datos): ResultadoEntrada
     {
@@ -44,25 +45,20 @@ final class EntradaInventarioService
 
             $existencia = $this->existenciaBloqueada($datos->bodegaId, $datos->productoId, $lote->id);
 
-            $saldoAnterior = $existencia->cantidad;
-            // Sobre el valor bloqueado: si se desborda, la excepción revierte la transacción
-            // (incluido el lote o la existencia en 0 creados en esta petición).
-            if ($datos->cantidad > self::SALDO_MAXIMO - $saldoAnterior) {
-                throw CantidadExcedeMaximo::paraSaldo($saldoAnterior, $datos->cantidad, self::SALDO_MAXIMO);
-            }
-
-            $saldoPosterior = $saldoAnterior + $datos->cantidad;
-            $existencia->forceFill(['cantidad' => $saldoPosterior])->save();
-
-            // RN-06: aquí se registrará el movimiento de kardex ENTRADA, en esta misma transacción
-            // y con la existencia aún bloqueada:
-            //   $this->kardex->registrar(TipoMovimiento::Entrada, $existencia, +$datos->cantidad,
-            //       $saldoAnterior, $saldoPosterior, $datos->usuarioId, referencia: …);
-            // Si falla, la transacción revierte también el cambio de stock (RN-06-AC7).
+            // RN-06: el registrador valida el máximo sobre el saldo bloqueado (422
+            // CANTIDAD_EXCEDE_MAXIMO), actualiza la existencia y escribe el movimiento ENTRADA en
+            // esta misma transacción. Si falla, se revierte todo, incluido el lote o la existencia
+            // en 0 creados en esta petición (RN-06-AC7).
+            $movimiento = $this->kardex->registrar(
+                TipoMovimiento::Entrada,
+                $existencia,
+                $datos->cantidad,
+                $datos->usuarioId,
+            );
 
             $existencia->setRelation('lote', $lote);
 
-            return new ResultadoEntrada($existencia, $datos->cantidad, $saldoAnterior, $saldoPosterior, $loteCreado);
+            return new ResultadoEntrada($existencia, $datos->cantidad, $movimiento->saldo_anterior, $movimiento->saldo_posterior, $loteCreado, $movimiento->id);
         });
 
         // Misma forma que cada fila de GET /inventario; se carga tras liberar el bloqueo.
