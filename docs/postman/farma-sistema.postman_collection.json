@@ -7,12 +7,12 @@
   },
   "item": [
     {
-      "id": "563834be-2f25-5dc1-8b70-2e1dbb92964d",
+      "id": "4fd3d170-cdc6-513c-8022-433bee3de53c",
       "name": "Salud",
       "description": "Sondas de despliegue `/health` y `/ready` en la raíz (usan `root_url`, sin `/api/v1`), sin auth.",
       "item": [
         {
-          "id": "e5660dbb-219b-576f-b52f-b6b21011e615",
+          "id": "d54bb419-1d4d-5d2a-b6e4-f4426aa8aeeb",
           "name": "Health (liveness)",
           "request": {
             "method": "GET",
@@ -41,7 +41,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "08228411-f559-5072-9c5e-4fbd80a84375",
+                "id": "d99f2f67-6167-50bd-9124-c48e0a3505f8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -52,7 +52,7 @@
           ]
         },
         {
-          "id": "b09ae22b-6c17-51c9-8623-3f14adae067a",
+          "id": "eadf92ff-c909-5655-949e-1465b199b500",
           "name": "Ready (readiness)",
           "request": {
             "method": "GET",
@@ -81,7 +81,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "4e99d2e6-f27a-5fed-a4ef-e0152cfa5a48",
+                "id": "a07f9c17-0024-505c-bbe3-49a55e6912b5",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -96,12 +96,12 @@
       ]
     },
     {
-      "id": "9a7cc9bc-8ee4-5afc-92e4-1488d7db03a2",
+      "id": "153d8b3a-436b-5b1a-80f0-6d9d549aa1ee",
       "name": "0. Auth",
       "description": "Login por rol (guarda `token_<rol>`), usuario actual y logout.",
       "item": [
         {
-          "id": "1a4d583f-1da3-555c-8271-ac6a0bd3624a",
+          "id": "17c3787e-559d-5a1c-8fe4-d341503f0088",
           "name": "Login auxiliar",
           "request": {
             "method": "POST",
@@ -144,7 +144,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "e77ac69f-3aaf-597d-97db-6e67f04c9c0f",
+                "id": "83efd664-ec66-51e6-a497-40c7c35bb5d8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -162,7 +162,7 @@
           ]
         },
         {
-          "id": "360337ad-9f9e-513d-b259-9cd9b57d5292",
+          "id": "b4894546-4165-5bc7-b483-0a25b8e3f9a8",
           "name": "Login regente",
           "request": {
             "method": "POST",
@@ -205,7 +205,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "457a30f1-3f12-5696-8896-306f3f47abab",
+                "id": "67ac044c-a5a3-55aa-b659-c9c46a54ff46",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -223,7 +223,7 @@
           ]
         },
         {
-          "id": "cd332490-e2f2-52ea-abd0-c771ba066493",
+          "id": "fd1f8422-8446-5c20-8820-5df00aa9dd3f",
           "name": "Login regente 2",
           "request": {
             "method": "POST",
@@ -266,7 +266,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "29bedf28-ba1c-51e6-961a-4f4762d9f132",
+                "id": "0a6c1928-85d7-5a93-98e8-3344d6586463",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -284,7 +284,7 @@
           ]
         },
         {
-          "id": "3ac35cb9-a4c8-55c5-96a0-13d61f41002e",
+          "id": "2a018545-6ac4-50a5-b443-b98f25550126",
           "name": "Login médico",
           "request": {
             "method": "POST",
@@ -327,7 +327,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "d9d7d49f-f66a-5e56-9933-25653f8fccdd",
+                "id": "ff725fe5-8159-5ebe-8308-ca2ca0cad0b8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -345,7 +345,7 @@
           ]
         },
         {
-          "id": "2f985274-9c37-5611-8a9d-504439dc5e75",
+          "id": "069eeed0-1914-5589-9888-d7162173b577",
           "name": "Login auditor",
           "request": {
             "method": "POST",
@@ -388,7 +388,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "d84f6066-2b71-507d-991d-927c3022e24c",
+                "id": "d2c9f517-ece5-5c8a-9728-8d9f4d6086c1",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -406,7 +406,7 @@
           ]
         },
         {
-          "id": "44f5d4d9-adab-52a6-947e-dffabbd84eea",
+          "id": "f6fe88a9-63e3-57b9-9727-0823a0aa8e03",
           "name": "Login admin",
           "request": {
             "method": "POST",
@@ -449,7 +449,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "82533a83-2800-5adc-a0d2-4d569ad1adfb",
+                "id": "7cd1af80-9b87-58eb-a333-af05d4c5e6d3",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -467,7 +467,7 @@
           ]
         },
         {
-          "id": "e0d8a591-62f6-59e7-963b-7660e119feb7",
+          "id": "439cc959-46ef-5529-bc23-cc8ce6f08ec2",
           "name": "Usuario actual (me)",
           "request": {
             "method": "GET",
@@ -504,7 +504,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "adfdeede-91c5-58d6-b9ba-5bfd9557f87f",
+                "id": "db3d4f91-7770-5e74-9bf7-71d994c94472",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -519,7 +519,7 @@
           ]
         },
         {
-          "id": "df6170bd-744a-5fcd-bfab-5c3b8d4d9f7c",
+          "id": "03f4aae6-0425-5af5-a57e-def2d76c519d",
           "name": "Login para cerrar sesión (token temporal)",
           "request": {
             "method": "POST",
@@ -562,7 +562,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "989b9246-5fc6-5f9c-8b6b-3ff176beb4c8",
+                "id": "508f5b45-958d-5af8-9718-e3b408476fd4",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -573,7 +573,7 @@
           ]
         },
         {
-          "id": "f3f816ee-9205-5a78-9134-b43e5f4bfc2a",
+          "id": "a9d54c1e-3021-5088-a69e-99281d588719",
           "name": "Logout",
           "request": {
             "method": "POST",
@@ -610,7 +610,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a9053825-e455-5ac7-86ee-06044671198f",
+                "id": "ce7ad5f1-0f2a-5e11-95a5-a1fef11788cd",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
@@ -620,7 +620,7 @@
           ]
         },
         {
-          "id": "0f29068e-f165-5abe-9afc-3974bea3850c",
+          "id": "63282372-0fd9-5c54-a366-ec5a75e495c2",
           "name": "Usuario actual con token revocado",
           "request": {
             "method": "GET",
@@ -657,7 +657,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "ebfd29cd-14c0-5b30-a055-f204c1287565",
+                "id": "7f4a5f5e-b634-5fca-98f7-165a41ec7682",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
@@ -668,12 +668,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "dcf28de6-a0e1-57d8-bd24-0c955b1b0606",
           "name": "Errores",
           "description": "Errores representativos de autenticación.",
           "item": [
             {
-              "id": "0dca4dcc-3520-5f86-a181-aba938e63223",
+              "id": "87932231-7fe8-5b24-952d-8e43f229d08e",
               "name": "Credenciales inválidas → 401",
               "request": {
                 "method": "POST",
@@ -716,7 +716,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "55029c58-4838-5d32-9f53-cdb732d68022",
+                    "id": "8979acf0-e97d-5ee1-86bb-2dff90f4257e",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
@@ -727,7 +727,7 @@
               ]
             },
             {
-              "id": "d38cd22d-d16e-5245-be87-018be3eb0026",
+              "id": "829c0b04-50df-54aa-b585-1d3a3cb84898",
               "name": "Login sin contraseña → 422",
               "request": {
                 "method": "POST",
@@ -770,7 +770,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "fac505bb-87b7-5d84-9ec4-7fe09b75ecbb",
+                    "id": "3597cf23-4181-5fde-9310-f3276e7b5335",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -782,7 +782,7 @@
               ]
             },
             {
-              "id": "10cd228a-ab55-5306-b192-aeddb1ec729d",
+              "id": "9dabd580-11fa-5e04-b42e-142cb80f9514",
               "name": "Sin token → 401",
               "request": {
                 "method": "GET",
@@ -812,7 +812,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "28f13c9a-c384-596a-a33f-5e570e56e2c0",
+                    "id": "820645fb-f6e8-5736-a7e1-b3a10fe6214a",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
@@ -827,12 +827,12 @@
       ]
     },
     {
-      "id": "60adec0c-4bfd-50ba-9aba-96d0da760792",
+      "id": "edb3700f-7e31-5ac7-b7ee-f13677a64004",
       "name": "1. Catálogo",
       "description": "Bodegas y productos (lectura por rol; alta solo admin).",
       "item": [
         {
-          "id": "9c2e1cc7-d069-5514-89f1-f21a805fc196",
+          "id": "20cfcdbd-c8ff-528d-b9b6-b49baa4eb1aa",
           "name": "Listar bodegas",
           "request": {
             "method": "GET",
@@ -874,7 +874,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "0b4ad728-c0b9-5445-94cc-48155622b786",
+                "id": "47c49a5a-2db4-56b9-94bc-de38017dfddb",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -891,7 +891,7 @@
           ]
         },
         {
-          "id": "9953b262-3877-51b0-b016-9f4797153b06",
+          "id": "1637d0bc-0a11-5df5-92b5-6ec205801f11",
           "name": "Ver bodega",
           "request": {
             "method": "GET",
@@ -928,7 +928,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "6ee52d0e-f3ca-59c1-81d0-2b903e2750d0",
+                "id": "e1d929c4-e860-552f-a650-b8ae054e99e8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -939,7 +939,7 @@
           ]
         },
         {
-          "id": "a63022c5-db53-50e0-b28e-061485a8d6a7",
+          "id": "991f140f-fd0a-5179-9ce6-79425487d2bf",
           "name": "Crear bodega (admin)",
           "request": {
             "method": "POST",
@@ -988,7 +988,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "b33187d6-1bba-53b9-adb9-2c2f391ae233",
+                "id": "21e0cc8b-8901-5e15-8299-e0dd1f26fa80",
                 "type": "text/javascript",
                 "exec": [
                   "const s = Date.now().toString(36).toUpperCase();",
@@ -999,7 +999,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "2209ab53-dbe1-5fc3-abd8-14e62a0e7c71",
+                "id": "c099a38d-3791-56d0-a76a-e0217fb88891",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -1012,7 +1012,7 @@
           ]
         },
         {
-          "id": "fd31415c-042b-5688-8814-d7d47c7b5ce1",
+          "id": "d1c024a1-135e-55ae-9313-100b2b6bab4d",
           "name": "Listar productos",
           "request": {
             "method": "GET",
@@ -1054,7 +1054,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "290cff34-77ed-5051-99c9-1c92e4145236",
+                "id": "dcd08327-377b-529a-924c-71fb8a9d9082",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -1071,7 +1071,7 @@
           ]
         },
         {
-          "id": "f1bbbacd-f8f5-5287-b738-06fb1e0b7c45",
+          "id": "106cc439-0533-56d0-8592-03e713a23a2a",
           "name": "Ver producto",
           "request": {
             "method": "GET",
@@ -1108,7 +1108,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a3038266-9e59-5d4f-9e45-a3c88db86738",
+                "id": "ca9b41d3-468f-5bf6-8d32-458dc5cc5462",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -1119,7 +1119,7 @@
           ]
         },
         {
-          "id": "c462ee43-b2f7-5098-b9e8-8c3a295427a9",
+          "id": "673df093-35f0-5e16-8641-52929ce5f529",
           "name": "Crear producto (admin)",
           "request": {
             "method": "POST",
@@ -1168,7 +1168,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "82a715bd-3b5b-5f66-956b-bdbf744f9884",
+                "id": "c5216ae9-5736-5c35-ab9b-0d52535d2286",
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('codigo_producto_nuevo', 'PM-' + Date.now().toString(36).toUpperCase());"
@@ -1178,7 +1178,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "782510a0-e184-56d4-8164-14dc15dd0c8a",
+                "id": "ad97046c-dd60-5354-85da-1346d0128cd4",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -1189,12 +1189,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "fc386afb-1c9a-58fc-beeb-5ef8a61736e7",
           "name": "Errores",
           "description": "Errores representativos del catálogo.",
           "item": [
             {
-              "id": "80abc36e-bc23-50f0-9e1c-2b161d3f116b",
+              "id": "e256549b-4917-5950-be39-9368c2015c7b",
               "name": "Crear bodega sin rol admin → 403",
               "request": {
                 "method": "POST",
@@ -1243,7 +1243,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "f76b2ab0-4618-5455-a6d5-51dc9bcc1b21",
+                    "id": "d7a8291a-d3be-5eb1-9a3d-30c14d4af8f6",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -1254,7 +1254,7 @@
               ]
             },
             {
-              "id": "668f2aa1-631a-5a86-aed0-97fb9081ec5e",
+              "id": "ba64566b-1548-5953-821a-46d7fc9ee7d1",
               "name": "Listar bodegas como médico → 403",
               "request": {
                 "method": "GET",
@@ -1290,7 +1290,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "24ddc0ec-42f6-5e8c-9085-159cfe030a99",
+                    "id": "82c6fc1c-64c6-522b-9d9b-2342d1a42cc0",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -1301,7 +1301,7 @@
               ]
             },
             {
-              "id": "4f657408-db9b-5d99-8d8b-ba97d7e05ad6",
+              "id": "95213111-e245-5f1b-9b11-31d919cb8812",
               "name": "Crear bodega con código duplicado → 422",
               "request": {
                 "method": "POST",
@@ -1350,7 +1350,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "5007e508-a65c-5c01-803b-763cdf34b722",
+                    "id": "7783ca34-df0c-50f6-acb2-9ab3559d3df6",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -1362,7 +1362,7 @@
               ]
             },
             {
-              "id": "2cf4e6e8-9006-5af3-9b34-3eff1a9d7565",
+              "id": "2b225f56-9cd8-50e5-8d99-85d481b30b2c",
               "name": "por_pagina fuera de rango → 422",
               "request": {
                 "method": "GET",
@@ -1404,7 +1404,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "c79ab9d3-4170-5356-9dea-f20097946bb6",
+                    "id": "1926c40b-deef-5c32-8db5-07e5982a752a",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -1415,7 +1415,7 @@
               ]
             },
             {
-              "id": "ad1a07bc-92a0-50de-89d1-dcfa433a54ad",
+              "id": "b42e625a-4aaa-5e34-8f90-2496b505aeaf",
               "name": "Id mal formado → 404",
               "request": {
                 "method": "GET",
@@ -1452,7 +1452,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "36dcacb8-d2d7-55ca-a9db-391282fcc612",
+                    "id": "03ae4e14-e620-52fb-9f4e-7989f26cdf3c",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
@@ -1463,7 +1463,7 @@
               ]
             },
             {
-              "id": "10cd228a-ab55-5306-b192-aeddb1ec729d",
+              "id": "e8b5ae85-eabb-577c-bc93-568c4633730d",
               "name": "Sin token → 401",
               "request": {
                 "method": "GET",
@@ -1492,7 +1492,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "28f13c9a-c384-596a-a33f-5e570e56e2c0",
+                    "id": "224cc3b1-c1f8-529a-86d3-03927ba529da",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
@@ -1507,12 +1507,12 @@
       ]
     },
     {
-      "id": "4c7a2e4b-1c1d-55af-b24c-39dd0716bd62",
+      "id": "2c691569-a175-5464-812f-23eb4d39d2c7",
       "name": "2. Inventario",
       "description": "Existencias por bodega, producto y lote (RN-01).",
       "item": [
         {
-          "id": "a05e71bf-803a-50a2-8a2c-f037f79fb56a",
+          "id": "b9c82300-627a-5075-9b49-6fa3b33df478",
           "name": "Existencias de Farmacia Central",
           "request": {
             "method": "GET",
@@ -1558,7 +1558,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "c260840e-e072-5f2e-84af-67371beabd19",
+                "id": "68e41554-eb85-59ea-b7e7-f9a28372fa3c",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -1578,7 +1578,7 @@
           ]
         },
         {
-          "id": "41a4f6f3-6fe8-5b15-8973-fb576af53f7f",
+          "id": "2b344ec3-e501-5760-96a6-79ed650f8bd7",
           "name": "Existencias filtradas por producto (auditor)",
           "request": {
             "method": "GET",
@@ -1620,7 +1620,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "db7c1796-d9a6-5620-9752-a8feab5c9a14",
+                "id": "da5819a9-c234-51fb-9cfb-65fb64a28a52",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -1631,7 +1631,7 @@
           ]
         },
         {
-          "id": "8e91d47f-fdaf-5a92-82c5-fbdb7f283e57",
+          "id": "61f48f4c-83e9-5614-8a0f-34ae2815b6fd",
           "name": "Filtro con id inexistente → lista vacía",
           "request": {
             "method": "GET",
@@ -1673,7 +1673,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "9492096f-41ed-5e31-813a-63c18e78c1d2",
+                "id": "080733f9-06f7-5a8f-a96e-ab51c4b23320",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -1684,12 +1684,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "8e0996a7-97cf-56ab-9e8a-736a15ad7df3",
           "name": "Errores",
           "description": "Errores representativos de la consulta de inventario.",
           "item": [
             {
-              "id": "62eaddd4-dab0-5986-9e9e-f8fbc00bddfd",
+              "id": "a2bf25c2-15a5-549d-8538-eff746cb2a34",
               "name": "Inventario como médico → 403",
               "request": {
                 "method": "GET",
@@ -1725,7 +1725,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "c1cd095f-e1bc-557e-a1d6-05ed829343eb",
+                    "id": "923d4034-676d-5960-ae70-c6b56f6e37a8",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -1736,7 +1736,7 @@
               ]
             },
             {
-              "id": "bfd23383-2d10-5df6-ae64-12d91301ff80",
+              "id": "11a7fb4b-f7b5-578e-9430-d4116244f046",
               "name": "Filtro mal formado → 422",
               "request": {
                 "method": "GET",
@@ -1778,7 +1778,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "51ab6cfc-fde7-50bd-9e33-aed3324c69b7",
+                    "id": "ecd850b6-00c4-58fb-a113-99544f7a72e7",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -1793,12 +1793,12 @@
       ]
     },
     {
-      "id": "9a28f854-1eb8-5d1b-a261-b90a6a30be66",
+      "id": "d93c844c-ff8d-5185-ac96-ca7862aae4d9",
       "name": "3. Entradas",
       "description": "Compras que suman stock y escriben kardex (RN-01, RN-06).",
       "item": [
         {
-          "id": "15eb85b0-1fff-57af-91de-6331a4974d0e",
+          "id": "d79aac11-f3bc-5a16-9916-144110dd4e73",
           "name": "Entrada a lote existente",
           "request": {
             "method": "POST",
@@ -1848,7 +1848,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "196e54c3-4d31-50c4-a56d-fe99719f1809",
+                "id": "f8f9c2ec-f2ea-56da-ad94-5054ce626d3f",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -1864,7 +1864,7 @@
           ]
         },
         {
-          "id": "8f781eb7-5129-5a07-98d8-cfb8510694be",
+          "id": "91d1ccf5-e59a-5547-976b-8f1e2aa5954e",
           "name": "Entrada con lote nuevo",
           "request": {
             "method": "POST",
@@ -1914,7 +1914,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "a4bfcb75-c785-502b-b15b-4e81ca6821d4",
+                "id": "4f9c9ab0-7073-575c-9a08-73386c70fb2e",
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('codigo_lote_nuevo', 'PM-' + Date.now().toString(36).toUpperCase());"
@@ -1924,7 +1924,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "c0c97262-9def-572c-9421-06184a12131e",
+                "id": "8ce8a19d-6e13-500b-8822-ff841e85beec",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -1939,12 +1939,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "d3afb237-34a9-568b-be7a-9e816033db9b",
           "name": "Errores",
           "description": "Errores representativos de entradas.",
           "item": [
             {
-              "id": "e0b7c9ff-9cd1-54d3-8a69-5d7117185c6d",
+              "id": "88cef4e8-fb74-5104-ae19-300d05b24959",
               "name": "Entrada como auxiliar → 403",
               "request": {
                 "method": "POST",
@@ -1994,7 +1994,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "8dba7db1-8a34-50f3-941b-3778f5766bfd",
+                    "id": "257172a1-53cf-51d7-96fc-5bbc887c94c3",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -2005,7 +2005,7 @@
               ]
             },
             {
-              "id": "6708f9b1-96ac-5a2e-bc9a-fb6cd9856b14",
+              "id": "ce41565c-386e-5323-acaa-0097e17d3c9d",
               "name": "Cantidad como texto → 422",
               "request": {
                 "method": "POST",
@@ -2055,7 +2055,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "c3eb8a00-da25-551b-9b7d-b51418101fe8",
+                    "id": "847135c1-d88b-51a1-9a2d-668bbc759a22",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -2067,7 +2067,7 @@
               ]
             },
             {
-              "id": "d9024e93-b7f9-57a7-bb5f-aab5053cc7b5",
+              "id": "d461a5eb-0a2d-50d9-81b8-6fe0544d8151",
               "name": "Lote nuevo ya vencido → 422 LOTE_VENCIDO",
               "request": {
                 "method": "POST",
@@ -2117,7 +2117,7 @@
                 {
                   "listen": "prerequest",
                   "script": {
-                    "id": "5c46b563-e279-5e83-984a-0d30d09943f6",
+                    "id": "b6c3a25c-dd85-5426-8797-cdb64a2fb988",
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('codigo_lote_vencido', 'PMV-' + Date.now().toString(36).toUpperCase());"
@@ -2127,7 +2127,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "111fb002-b6c3-5007-a4b0-67c38d7ed8b8",
+                    "id": "defd801f-84c2-5447-8be9-49eb4dba139e",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -2138,7 +2138,7 @@
               ]
             },
             {
-              "id": "cf56e826-ad32-534f-8c30-37c893225ab4",
+              "id": "9d6a01cc-11c6-5799-8b88-8bef2e86fd18",
               "name": "Lote existente con otra fecha → 422 LOTE_NO_COINCIDE",
               "request": {
                 "method": "POST",
@@ -2188,7 +2188,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "a65f1c2c-978a-5db2-9b64-d5870fb12730",
+                    "id": "ad21c360-261b-5ba6-ba5f-aaf32c37694e",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -2203,12 +2203,12 @@
       ]
     },
     {
-      "id": "e528d324-fa94-58cb-a0a1-851cf377e1fc",
+      "id": "0e944c83-f373-5e44-b0bc-26afc3ddd9e3",
       "name": "4. Ajustes",
       "description": "Correcciones manuales con motivo (RN-06).",
       "item": [
         {
-          "id": "5905c239-024c-544e-9bf7-eeccffdd47fb",
+          "id": "149e9d74-c86f-5e11-b1ac-e1b96be86d50",
           "name": "Ajuste negativo con motivo",
           "request": {
             "method": "POST",
@@ -2258,7 +2258,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "dbec63e1-ff24-548f-9147-013ba7f21cb5",
+                "id": "5af40725-7df6-5097-b9b0-a95f4aa39926",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -2271,12 +2271,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "fa57b12d-71d4-5799-af60-a00dc4efb5fb",
           "name": "Errores",
           "description": "Errores representativos de ajustes.",
           "item": [
             {
-              "id": "fb0daff6-d29b-5962-b811-e24372af2b6f",
+              "id": "688ba315-4002-585e-87b7-328e8f3a94b6",
               "name": "Ajuste que deja saldo negativo → 409 STOCK_INSUFICIENTE",
               "request": {
                 "method": "POST",
@@ -2326,7 +2326,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "9f22e38c-cd4e-52ec-904f-543825d56f13",
+                    "id": "9768e0d8-3cb9-52c9-b36b-813964e8a5f4",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -2338,7 +2338,7 @@
               ]
             },
             {
-              "id": "b45eeff0-8de5-58f0-8123-2171ab50d35e",
+              "id": "04f14cf0-2221-5a40-8e6a-be35b7f2a5e6",
               "name": "Ajuste como auxiliar → 403",
               "request": {
                 "method": "POST",
@@ -2388,7 +2388,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "32f339e3-64a9-503c-bebe-50235de114ae",
+                    "id": "10a44a4a-fe9e-5060-9e1c-a273d3eed728",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -2399,7 +2399,7 @@
               ]
             },
             {
-              "id": "96b08637-3319-5409-9450-1897958ba6bf",
+              "id": "242f9b61-b311-564a-a3eb-12221485e369",
               "name": "Motivo demasiado corto → 422",
               "request": {
                 "method": "POST",
@@ -2449,7 +2449,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "5cfaee01-f808-5914-a5c5-11ddf6270005",
+                    "id": "af98c592-f58a-542d-8497-d648f4291131",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -2465,12 +2465,12 @@
       ]
     },
     {
-      "id": "50f239ed-8094-55de-9cbd-5e92a6a03b6f",
+      "id": "dbb653ef-e115-5dc1-a2fc-35aa5b5705ba",
       "name": "5. Kardex",
       "description": "Movimientos inmutables (RN-06).",
       "item": [
         {
-          "id": "04b92167-a493-5fed-8dea-cc17e5640c3d",
+          "id": "08bb348b-6051-5741-8e3f-79cbf0fc1b7f",
           "name": "Kardex de una existencia",
           "request": {
             "method": "GET",
@@ -2516,7 +2516,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "246a2834-73ae-590c-b836-c2587176b6d7",
+                "id": "0e894a2c-b842-59ac-842e-cf2b1e500ad1",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2533,7 +2533,7 @@
           ]
         },
         {
-          "id": "542efad2-9051-5725-8615-e815f49554f7",
+          "id": "02d63025-3ebc-5ba4-9812-6a09dae6fe7a",
           "name": "Movimiento de kardex",
           "request": {
             "method": "GET",
@@ -2570,7 +2570,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "71acb001-7a0f-5891-88e8-7c4bf65482e2",
+                "id": "dc293463-1a7d-587b-a9db-f6f30225441b",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2581,12 +2581,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "5dbd9732-0be4-5421-a0d9-7f0d56e20ea7",
           "name": "Errores",
           "description": "Errores representativos del kardex.",
           "item": [
             {
-              "id": "312137c1-5271-5f49-bcda-a7a10d11c64d",
+              "id": "06a4c9b5-9422-558a-b172-cbb477b45cfc",
               "name": "Modificar un movimiento → 405",
               "request": {
                 "method": "PUT",
@@ -2636,7 +2636,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "a62e0a82-baa1-5b13-8cf9-5ab48c1807ad",
+                    "id": "fba4b176-73ca-58f9-811a-519d09230b07",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 405', () => pm.response.to.have.status(405));",
@@ -2648,7 +2648,7 @@
               ]
             },
             {
-              "id": "66311abd-1e44-56d1-bab5-3ec7c19388c7",
+              "id": "e85f6bba-0f5c-51e7-b01c-48d96cf2bc20",
               "name": "Kardex como médico → 403",
               "request": {
                 "method": "GET",
@@ -2684,7 +2684,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "40fe552d-7976-5cdd-a2c3-671786b947de",
+                    "id": "72f07ce5-1a15-57d0-b0b1-2e52fdb317e0",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -2695,7 +2695,7 @@
               ]
             },
             {
-              "id": "005cb2be-a4c8-5fd5-9411-1f8561f5fa77",
+              "id": "5056444a-3781-5bac-8564-f396fb4b79c2",
               "name": "Rango de fechas invertido → 422",
               "request": {
                 "method": "GET",
@@ -2741,7 +2741,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "780c15ec-7d35-5600-8b01-872e86882ab6",
+                    "id": "753998dc-9b0f-5551-a447-988a683aec88",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -2756,12 +2756,12 @@
       ]
     },
     {
-      "id": "9c9295fb-c20d-508c-ba76-670083f6f2e3",
+      "id": "c0d1d8d9-7289-57be-8a33-4b440eae7c97",
       "name": "6. Dispensación",
       "description": "FEFO, idempotencia, topes de prescripción y control especial (RN-02, 03, 04, 05, 09).",
       "item": [
         {
-          "id": "bc716d53-8617-5e62-b8dc-77a1326a82cd",
+          "id": "02206faf-4e9c-5588-8087-342261fd346b",
           "name": "Preparación · buscar paciente 1",
           "request": {
             "method": "POST",
@@ -2811,7 +2811,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "4ce740ff-76b2-5509-987f-ad10801f4e16",
+                "id": "e2a74d5f-ded3-5d33-a47d-d9e5ac30f537",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2824,7 +2824,7 @@
           ]
         },
         {
-          "id": "de44f380-3d7a-5cf9-9056-7dc5bd97dbe3",
+          "id": "2c7fe84c-cfe0-557b-b0c7-c03c820543d7",
           "name": "Preparación · prescripciones paciente 1",
           "request": {
             "method": "GET",
@@ -2862,7 +2862,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "e679e33b-b96b-5694-b901-34e106a552b4",
+                "id": "f4c5772c-9a25-5673-92cf-82881043cc64",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2879,7 +2879,7 @@
           ]
         },
         {
-          "id": "b0430933-2d64-532e-bbe9-525c03e8b13d",
+          "id": "2e989835-7e87-5b85-bf22-f1914e239193",
           "name": "Preparación · buscar paciente 2",
           "request": {
             "method": "POST",
@@ -2929,7 +2929,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a8a641d4-5539-5cb3-9cba-6d1c781d5243",
+                "id": "243bda84-d5c9-55be-949d-97cf3edba9d3",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2942,7 +2942,7 @@
           ]
         },
         {
-          "id": "f91edd35-9cb4-569c-849e-61c928db27d0",
+          "id": "c61e53af-3479-58b9-bd18-2bdfdad0e698",
           "name": "Preparación · prescripciones paciente 2",
           "request": {
             "method": "GET",
@@ -2980,7 +2980,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a8cad07b-39e2-5a6a-b863-2ee29d2992e4",
+                "id": "024434bf-9559-5fb2-96fb-918334ec9533",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -2996,7 +2996,7 @@
           ]
         },
         {
-          "id": "8d662c1e-ffaa-54f9-aff3-17de04f1890d",
+          "id": "dfd7c089-383b-54b2-ad37-e675ed55a801",
           "name": "Preparación · buscar paciente 3",
           "request": {
             "method": "POST",
@@ -3046,7 +3046,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "7119ba8a-37c3-5e44-8158-f6af0faf2709",
+                "id": "d6bfbf3d-ef29-5108-ae19-9c920e4f4d08",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3059,7 +3059,7 @@
           ]
         },
         {
-          "id": "2391e8fa-eb37-5b2a-a1b5-2ef7b71a61a3",
+          "id": "47eb1455-4c6c-5595-8235-79b465eecc2e",
           "name": "Preparación · prescripciones paciente 3",
           "request": {
             "method": "GET",
@@ -3097,7 +3097,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "3ce0e6f4-52f3-561e-9fba-1f62b96e1104",
+                "id": "671db657-56ae-5a31-b556-a20263c0346b",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3113,7 +3113,7 @@
           ]
         },
         {
-          "id": "da95777a-ae31-5272-86f1-bdcd66e374eb",
+          "id": "e15f188e-6d67-506f-9da1-9ad4602851c1",
           "name": "Previsualizar FEFO",
           "request": {
             "method": "POST",
@@ -3163,7 +3163,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "3c8b2c91-0e2e-57b6-88d9-548b86d95295",
+                "id": "80f5ede4-33b7-5209-82e9-1551a0839d8f",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3178,7 +3178,7 @@
           ]
         },
         {
-          "id": "e33422c1-1c15-538a-baff-a5519db01fd0",
+          "id": "9227a37d-cd00-5e18-ab3c-8c82c27475f1",
           "name": "Crear dispensación (Idempotency-Key)",
           "request": {
             "method": "POST",
@@ -3231,7 +3231,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "21ac82ea-3905-5dcb-aaf2-3113f294762d",
+                "id": "456c3379-a709-59db-ae00-72095a38040d",
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
@@ -3241,7 +3241,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "adf77b7c-48fb-5156-a920-576d31ca4e3c",
+                "id": "98be7668-c77d-5b5d-8e53-5f58a2955887",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -3258,7 +3258,7 @@
           ]
         },
         {
-          "id": "0142f97a-659c-56d7-a45c-821657626f78",
+          "id": "97de5d51-e6a2-595a-96f2-5205cd96754c",
           "name": "Repetir con la misma clave",
           "request": {
             "method": "POST",
@@ -3311,7 +3311,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "8f238da3-8a5c-5558-ae79-70622aee5241",
+                "id": "f8651f45-b55b-544c-b7f0-a6938f301d7a",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -3323,7 +3323,7 @@
           ]
         },
         {
-          "id": "b0f3e63b-841e-5545-b4e1-d34e28497799",
+          "id": "92e82bf1-563e-5345-a8ab-09e46c36c209",
           "name": "Crear dispensación de control especial",
           "request": {
             "method": "POST",
@@ -3376,7 +3376,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "a94df594-5e2b-5792-ba62-4a33eef8daa7",
+                "id": "23f15237-dcf6-50b1-9283-cfc0734f1ee4",
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('idempotency_key_control', pm.variables.replaceIn('{{$guid}}'));"
@@ -3386,7 +3386,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a87e4fd7-cc5c-531e-8dc8-8aa1f7d9308a",
+                "id": "8315e0ae-2ba5-502a-806e-ea90b2261ae1",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -3399,7 +3399,7 @@
           ]
         },
         {
-          "id": "1697c34a-52b8-51d9-ad1d-2f06d2691ae7",
+          "id": "e107a17e-8745-5d70-af29-f493383e2a66",
           "name": "Listar pendientes de autorización",
           "request": {
             "method": "GET",
@@ -3449,7 +3449,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "c2b2a081-a058-544c-9cdb-42b6c3b8d5fb",
+                "id": "0cd08d1e-0bf2-5ab3-8551-0e9013b0c983",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3464,7 +3464,7 @@
           ]
         },
         {
-          "id": "7c92ec41-55f2-5554-bddb-4c7a37744539",
+          "id": "d3faf907-cc87-558a-9751-e2b7c8cbbc3e",
           "name": "Detalle de dispensación (auditor)",
           "request": {
             "method": "GET",
@@ -3501,7 +3501,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "ca76a9ee-f812-5593-a3ae-9f5f40ea3193",
+                "id": "1887accb-1950-566e-85fe-efd48d1c247b",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3513,7 +3513,7 @@
           ]
         },
         {
-          "id": "1c5badbf-14be-5f13-a24c-cbd9038c40e7",
+          "id": "c3f353c1-1064-5060-9954-edc18fa319fa",
           "name": "Autorizar con otro regente",
           "request": {
             "method": "POST",
@@ -3551,7 +3551,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "f777f5d6-1da9-5661-9bb5-dced46aa0036",
+                "id": "c1414748-bec4-5ee8-95b6-7d724bc45b30",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3567,7 +3567,7 @@
           ]
         },
         {
-          "id": "86997c26-3291-54b1-86da-798acef523c5",
+          "id": "0b067144-dbd0-5092-abeb-36d5fd718936",
           "name": "Crear otra de control especial (para rechazar)",
           "request": {
             "method": "POST",
@@ -3620,7 +3620,7 @@
             {
               "listen": "prerequest",
               "script": {
-                "id": "8c9294f0-9738-5da2-b0c1-6069bfdac4e1",
+                "id": "242d3745-8990-5a3d-adf6-a8a136201d1c",
                 "type": "text/javascript",
                 "exec": [
                   "pm.environment.set('idempotency_key_rechazo', pm.variables.replaceIn('{{$guid}}'));"
@@ -3630,7 +3630,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "c2945377-62fc-5d3d-8136-9f9e434a9fd8",
+                "id": "8a5c9d09-5763-5eaa-a6dc-ee7156d11892",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -3641,7 +3641,7 @@
           ]
         },
         {
-          "id": "11b0a15b-b343-54a5-b75e-f9833e44d43e",
+          "id": "4c96a760-d37a-50e1-a4e4-b84e6b6ce2f8",
           "name": "Rechazar con otro regente",
           "request": {
             "method": "POST",
@@ -3692,7 +3692,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "53263e51-8ddd-593c-92c0-411f2334769a",
+                "id": "defde0d5-a41e-570e-9f87-beb8d07ccc37",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -3703,12 +3703,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "26181f3c-451d-5668-8430-7b5b7526aeac",
           "name": "Errores",
           "description": "Errores representativos de dispensación.",
           "item": [
             {
-              "id": "1beba2aa-7c4e-58db-a6e9-a2e73be0cca3",
+              "id": "95fdd32b-907f-5461-b64c-61f8051cd056",
               "name": "Preparación · pendiente creada por regente",
               "request": {
                 "method": "POST",
@@ -3761,7 +3761,7 @@
                 {
                   "listen": "prerequest",
                   "script": {
-                    "id": "dedaeb37-9327-5098-9e7c-e365fa07a4ea",
+                    "id": "4353bf15-f4f9-5930-8af7-1c0a12c4678f",
                     "type": "text/javascript",
                     "exec": [
                       "pm.environment.set('idempotency_key_err', pm.variables.replaceIn('{{$guid}}'));"
@@ -3771,7 +3771,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "787cc1bc-131e-58c8-abf8-25c1001f97f2",
+                    "id": "c96fc405-6da6-5319-b669-51dc55710370",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -3782,7 +3782,7 @@
               ]
             },
             {
-              "id": "2c8c8437-4bcc-5e22-9c89-024edd97393f",
+              "id": "4d37a369-2fa4-50ca-894b-0f91ce767891",
               "name": "Autorizar la propia → 403 AUTORIZACION_MISMO_USUARIO",
               "request": {
                 "method": "POST",
@@ -3820,7 +3820,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "72abb5b7-82d4-5349-9a31-6a13db8a72e9",
+                    "id": "6c67f10c-afee-5afd-b6bb-a053644fbe48",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -3831,7 +3831,7 @@
               ]
             },
             {
-              "id": "47b4676e-e6b7-5628-987c-0a36fd098209",
+              "id": "fe34fb66-9d13-575f-90f7-28d0427e2c62",
               "name": "Autorizar como auxiliar → 403",
               "request": {
                 "method": "POST",
@@ -3869,7 +3869,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "2e7ffa6b-08b8-5613-bf93-75761b4f067b",
+                    "id": "8aba7da8-8f6c-5367-91b9-0f648de0c1b8",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -3880,7 +3880,7 @@
               ]
             },
             {
-              "id": "594439bb-45a6-5e00-9854-fb706206e4a1",
+              "id": "b6447d4c-8731-5fdb-b4ad-acd859dad780",
               "name": "Limpieza · rechazar la pendiente (regente2)",
               "request": {
                 "method": "POST",
@@ -3931,7 +3931,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "f6461d4f-d76b-525a-acb0-07f0acdc2336",
+                    "id": "d811e1d2-4b18-5a8a-9e29-45a85af8d81c",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
@@ -3941,7 +3941,7 @@
               ]
             },
             {
-              "id": "0db41070-bb0e-5e0e-bb36-491d57d70173",
+              "id": "7d9d3037-5303-53d4-81d6-831584b25f56",
               "name": "Autorizar una ya confirmada → 409 TRANSICION_INVALIDA",
               "request": {
                 "method": "POST",
@@ -3979,7 +3979,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "31d95070-5648-58ed-88f9-586651f1d905",
+                    "id": "19403f16-9742-5e32-9a93-e753e39806fb",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -3990,7 +3990,7 @@
               ]
             },
             {
-              "id": "fb4e2891-ca37-5e7b-89ee-fbb68605f5ae",
+              "id": "2b8b9f14-4251-5c66-9ad7-8239836867b7",
               "name": "Sin stock en la bodega → 409 STOCK_INSUFICIENTE",
               "request": {
                 "method": "POST",
@@ -4043,7 +4043,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "b75eacad-1a73-53b8-a6d7-ea6a1e5b0d26",
+                    "id": "a2b6a75b-e7d4-5583-a14a-97c1f1a5e62b",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -4055,7 +4055,7 @@
               ]
             },
             {
-              "id": "11771068-9c8e-535d-83b8-322c25a135a7",
+              "id": "cbc125b1-ca00-535d-b964-cc1600df1e56",
               "name": "Supera lo prescrito → 422 CANTIDAD_EXCEDE_PRESCRITO",
               "request": {
                 "method": "POST",
@@ -4105,7 +4105,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "c6f1d1db-aa48-5c54-9262-42b70dc516a3",
+                    "id": "873a3f84-3ec1-59a1-a0ff-2969bec28231",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -4116,7 +4116,7 @@
               ]
             },
             {
-              "id": "35512ab2-c836-566c-adb3-179fa958600a",
+              "id": "983298f1-4cb2-5817-b15c-7752f4b98c3e",
               "name": "Prescripción de otro paciente → 422 PRESCRIPCION_NO_CORRESPONDE",
               "request": {
                 "method": "POST",
@@ -4166,7 +4166,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "b6103ec4-1fea-569e-9b5e-b8fb8001f90c",
+                    "id": "8e1fd05c-f4c7-558e-bd08-55825f155ab0",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -4177,7 +4177,7 @@
               ]
             },
             {
-              "id": "eaf74925-eba4-5ce2-9569-99d5c004bee3",
+              "id": "13b52fa3-84cc-5d2e-9adb-c2da45f6f902",
               "name": "Sin Idempotency-Key → 400",
               "request": {
                 "method": "POST",
@@ -4226,7 +4226,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "fd4ecdf6-c168-55c4-92f4-8c1a0c5202d3",
+                    "id": "3721edf8-c36f-5bf0-84ff-59c9a6f70987",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
@@ -4237,7 +4237,7 @@
               ]
             },
             {
-              "id": "815855a4-c624-5e58-9407-b69670c55c48",
+              "id": "3aa5c1d0-5a7f-5ea9-ab7f-ad8ba2b2ff43",
               "name": "Misma clave con otro cuerpo → 422 IDEMPOTENCY_KEY_REUTILIZADA",
               "request": {
                 "method": "POST",
@@ -4290,7 +4290,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "04cd7670-5b45-58c6-95ea-af5ed1c5cfec",
+                    "id": "ad5ed539-2d10-5dd2-87e6-d50b26ae98e9",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -4301,7 +4301,7 @@
               ]
             },
             {
-              "id": "fb00bb27-998c-5893-8a0f-a54a6ecc9b5f",
+              "id": "fbd36657-1027-525a-9682-0c49c7051c75",
               "name": "Crear como médico → 403",
               "request": {
                 "method": "POST",
@@ -4354,7 +4354,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "410a82b4-7ab2-588c-a296-237ef90a7b84",
+                    "id": "9cf7f53f-9c10-5501-9b20-9a2d0e0056a5",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -4365,7 +4365,7 @@
               ]
             },
             {
-              "id": "8363f177-0df8-5ed0-bf5b-6710af568d8c",
+              "id": "af290915-a0d9-58b5-a8a9-1280b2f1f014",
               "name": "Sin ítems → 422",
               "request": {
                 "method": "POST",
@@ -4415,7 +4415,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "b3c3be58-d1ed-5323-9d0b-cbbf674f6810",
+                    "id": "e5e261ce-359e-570f-9683-c99d72f88c29",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -4426,7 +4426,7 @@
               ]
             },
             {
-              "id": "1f5a9a4f-dcbb-5772-861b-6b7e15493842",
+              "id": "c8243f84-6999-557c-8cf8-e28f0e8dddf9",
               "name": "Listado como admin → 403",
               "request": {
                 "method": "GET",
@@ -4462,7 +4462,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "81281c86-57e8-5426-b603-b6c6760510d9",
+                    "id": "4bb102ff-1aff-5fc6-9b65-be79a3d1fa1f",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -4477,12 +4477,12 @@
       ]
     },
     {
-      "id": "f3752fa6-e717-5f3c-8a45-0a08eb6d66f6",
+      "id": "cd7f573a-f1f0-5a64-a613-c95d8b5c843c",
       "name": "7. Traslados",
       "description": "Máquina de estados y segregación de funciones (RN-07, RN-08).",
       "item": [
         {
-          "id": "0f09e654-ad32-5ce0-895b-868ca77c31c1",
+          "id": "35272d8e-9576-500b-86e9-58a2309c0e97",
           "name": "Crear traslado (borrador)",
           "request": {
             "method": "POST",
@@ -4531,7 +4531,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "02f184aa-c182-534d-953b-5d3379320013",
+                "id": "ec123201-7fd4-5575-a896-9644ab2b94f3",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -4544,7 +4544,7 @@
           ]
         },
         {
-          "id": "e9446126-4b45-53d6-8aa0-b8fd83151aba",
+          "id": "f41592c8-f1ba-5e9f-af54-1adb548e0a33",
           "name": "Editar ítems",
           "request": {
             "method": "PUT",
@@ -4595,7 +4595,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "695005b3-40db-5d96-b180-d1b7fa7420e6",
+                "id": "634ea212-a380-52d9-977c-7767f84954ae",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4608,7 +4608,7 @@
           ]
         },
         {
-          "id": "f45c6236-1fa3-516d-8fcf-fb7c9db0699d",
+          "id": "ccb5a12f-7f42-55a9-ba2d-a9109159580b",
           "name": "Solicitar",
           "request": {
             "method": "POST",
@@ -4646,7 +4646,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "1bcd03fc-e0b9-5fe9-aad0-62035274c2f4",
+                "id": "50172ad2-f772-5637-9ee9-11105bd822fb",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4657,7 +4657,7 @@
           ]
         },
         {
-          "id": "ad305927-07ab-5ccc-99e3-5e145f7524c8",
+          "id": "1f587287-6a66-5ad4-b3d0-d31f1f4a8b25",
           "name": "Aprobar (otro regente)",
           "request": {
             "method": "POST",
@@ -4695,7 +4695,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "ed8ecb28-e996-5b2f-8516-c874b2227e3f",
+                "id": "7daa247b-38dd-53fc-a8cb-831b60565f69",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4707,7 +4707,7 @@
           ]
         },
         {
-          "id": "66a31ef4-bd27-5551-bb27-5d64b6f1b214",
+          "id": "b9554ff0-8913-5280-b010-beb2ae76a61b",
           "name": "Despachar",
           "request": {
             "method": "POST",
@@ -4745,7 +4745,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "886ca7af-de53-5f9b-b0d3-6aed5e7959a6",
+                "id": "f5a4f7ed-83ca-5b9f-a934-f25ece5654e8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4758,7 +4758,7 @@
           ]
         },
         {
-          "id": "727366d1-7a15-5839-a616-9a9de01b38ba",
+          "id": "9a5e19b8-1bf6-5d16-9a98-8850a2eb1e06",
           "name": "Recibir con discrepancia",
           "request": {
             "method": "POST",
@@ -4809,7 +4809,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "dd352db3-6ee0-5e75-8fe1-55e05643ef39",
+                "id": "bee9ca0e-6d22-5370-a7c3-e83973d2c26c",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4827,7 +4827,7 @@
           ]
         },
         {
-          "id": "68a943c6-f4b0-549d-aab0-6d2724619715",
+          "id": "74146855-6c6c-5b0c-85da-95119bff5693",
           "name": "Ver traslado (auditor)",
           "request": {
             "method": "GET",
@@ -4864,7 +4864,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "8340e21c-3da0-581d-85ce-41dac752af1d",
+                "id": "b9a8ac7e-0856-5c6c-acf0-4a9d388a4151",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4875,7 +4875,7 @@
           ]
         },
         {
-          "id": "e4797b74-6721-564e-b85f-c455a2145680",
+          "id": "fa6b1b4a-45c1-5d0f-af95-b726648959d2",
           "name": "Resolver discrepancia",
           "request": {
             "method": "POST",
@@ -4926,7 +4926,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5136f408-08c3-5d31-9c68-b0f004186ff4",
+                "id": "7fd7e517-81ee-535c-b850-6c2897b00393",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4938,7 +4938,7 @@
           ]
         },
         {
-          "id": "00bf87b4-cf3c-5e76-abd6-6922d7687416",
+          "id": "d530c1fe-6e08-5a48-a1ce-43f23a851825",
           "name": "Listar traslados",
           "request": {
             "method": "GET",
@@ -4984,7 +4984,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "ec1ae68c-e53d-519d-a14a-cb97e32394ff",
+                "id": "7ae0eaaa-31a3-5927-af5a-6ff1b0d3104f",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -4995,7 +4995,7 @@
           ]
         },
         {
-          "id": "e3f31b30-4040-57fc-a4e2-bacf04379d91",
+          "id": "eafe210c-fa30-5f49-b8dc-ee3e66031ff5",
           "name": "Crear traslado para anular",
           "request": {
             "method": "POST",
@@ -5044,7 +5044,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "64bcaea9-597e-57b6-a16b-d1f5d58876cc",
+                "id": "826998d2-ec36-5020-80a2-d5d31a306445",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -5055,7 +5055,7 @@
           ]
         },
         {
-          "id": "d501f476-aa1b-5104-a9d5-71c905f1150d",
+          "id": "abd53574-3d94-5619-9262-41e396d1ca1a",
           "name": "Anular",
           "request": {
             "method": "POST",
@@ -5106,7 +5106,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "caa6fd84-fbc2-5e9b-8ee3-21082a0a2dbb",
+                "id": "b163fddc-9624-558c-a640-193e00706a6b",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -5117,12 +5117,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "28d4fead-3ebd-5546-967d-662ead99515f",
           "name": "Errores",
           "description": "Errores representativos de traslados.",
           "item": [
             {
-              "id": "c7203010-8970-5fe3-be05-fdd42df82b31",
+              "id": "129db7a8-0880-5f73-98f3-5a1143b0c619",
               "name": "Preparación · traslado solicitado por regente",
               "request": {
                 "method": "POST",
@@ -5171,7 +5171,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "3a5fbbd7-389d-59dc-ac31-f56c795b4e7f",
+                    "id": "a38edcba-fb6f-51cd-9ffc-c838b7a50d90",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -5182,7 +5182,7 @@
               ]
             },
             {
-              "id": "bd645c64-d0cf-5a95-9ba0-54b0c2759d75",
+              "id": "745fe280-2a96-527a-ba82-afc8e1c65ce2",
               "name": "Aprobar un borrador → 409 TRANSICION_INVALIDA",
               "request": {
                 "method": "POST",
@@ -5220,7 +5220,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "075bc9ee-d3c8-5340-b316-5a16575028f5",
+                    "id": "8a951586-ed14-5dd0-8869-774f48fba339",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -5231,7 +5231,7 @@
               ]
             },
             {
-              "id": "3f9627e2-7227-533e-9137-39cd48765408",
+              "id": "f9a30f4c-4602-50e9-97a6-a3ce70fed765",
               "name": "Preparación · solicitar (regente)",
               "request": {
                 "method": "POST",
@@ -5269,7 +5269,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "4607476a-43e2-575a-adab-cdac20782c10",
+                    "id": "4f4cf824-bef4-5c62-b220-2e8663ea8a77",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -5280,7 +5280,7 @@
               ]
             },
             {
-              "id": "d067a00a-c82a-5612-8a14-35234bb7d754",
+              "id": "6708e716-8d4f-5bc7-9fa8-684538111809",
               "name": "Aprobar el propio → 403 SEGREGACION_FUNCIONES",
               "request": {
                 "method": "POST",
@@ -5318,7 +5318,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "227a0cfa-81f0-5e9d-a644-79a7ca23215c",
+                    "id": "ddbea7eb-0d40-572f-9213-4af29f5ec10b",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -5330,7 +5330,7 @@
               ]
             },
             {
-              "id": "b977f286-fcfe-58f4-8f33-25350fc885b6",
+              "id": "1694c406-c163-55ac-b4fe-55df32d20af4",
               "name": "Aprobar como auxiliar → 403",
               "request": {
                 "method": "POST",
@@ -5368,7 +5368,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "2085f885-d92b-5a14-a145-4c403b475b66",
+                    "id": "56a75cde-8319-5521-b227-9d4713592e36",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -5379,7 +5379,7 @@
               ]
             },
             {
-              "id": "81007201-b86c-5937-bc46-57390f3dc928",
+              "id": "4af8cbf5-b586-57a3-9405-38b7f0cdc7a3",
               "name": "Despachar sin aprobar → 409 TRANSICION_INVALIDA",
               "request": {
                 "method": "POST",
@@ -5417,7 +5417,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "8dccc464-8952-5caf-ad0f-c4cedb2623f3",
+                    "id": "d773f8c5-7343-5602-9a2d-25c97ec79723",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -5428,7 +5428,7 @@
               ]
             },
             {
-              "id": "b5c03bc3-84cc-5260-bae4-61b1c9207f00",
+              "id": "ee6dbc7d-73b3-519a-90e1-af5fddc6b0dd",
               "name": "Limpieza · anular (regente)",
               "request": {
                 "method": "POST",
@@ -5479,7 +5479,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "bd015545-541b-50b4-b258-f6ac88a2bc2c",
+                    "id": "26331426-9d92-505c-95fb-84b96c37279a",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -5490,7 +5490,7 @@
               ]
             },
             {
-              "id": "17e109a6-d351-5822-9015-6341f0b48441",
+              "id": "fb3cd0f1-0335-51d9-a6c8-2028b3c4db67",
               "name": "Anular uno ya anulado → 409 TRANSICION_INVALIDA",
               "request": {
                 "method": "POST",
@@ -5541,7 +5541,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "df8ed01b-98a6-54f9-a1b9-d054528a215f",
+                    "id": "800eab10-70ad-536f-ae66-4a4d68d3fdbf",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -5552,7 +5552,7 @@
               ]
             },
             {
-              "id": "588f007c-d96b-54cf-b633-7789cb9897d1",
+              "id": "17107de6-1553-59d9-bf8b-b5199be34805",
               "name": "Resolver como solicitante → 403 SEGREGACION_FUNCIONES",
               "request": {
                 "method": "POST",
@@ -5603,7 +5603,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "3875ec90-33a7-5c49-8f92-dd6179bac4ad",
+                    "id": "653255f8-d11a-57eb-bb42-5e88196bfad3",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -5614,7 +5614,7 @@
               ]
             },
             {
-              "id": "a234b0de-79aa-501c-b868-d77dbe9392e2",
+              "id": "21c0db41-288b-59b2-b982-fa99e6ff1c39",
               "name": "Resolver una ya resuelta → 409 TRANSICION_INVALIDA",
               "request": {
                 "method": "POST",
@@ -5665,7 +5665,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "18dfb59f-7b06-5621-832b-0d571b5d9781",
+                    "id": "9b3ecb35-46c4-5c10-8f2b-9750192559c9",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -5676,7 +5676,7 @@
               ]
             },
             {
-              "id": "5c8cfa28-d0d2-5969-8b2c-8a3b164d4c0c",
+              "id": "3121aa53-a3f6-5802-a5ff-c111fe387f94",
               "name": "Origen igual a destino → 422",
               "request": {
                 "method": "POST",
@@ -5725,7 +5725,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "fb543c32-daa7-5113-9fbe-3185149a22cc",
+                    "id": "f17ad3a4-8904-5713-9229-90a4c6dc8f1b",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -5737,7 +5737,7 @@
               ]
             },
             {
-              "id": "21367b80-d49d-5707-af0c-af30561ccc75",
+              "id": "61f70418-37e0-5ee3-93e9-c24cc4beaca3",
               "name": "Lote vencido → 422 LOTE_VENCIDO",
               "request": {
                 "method": "POST",
@@ -5786,7 +5786,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "98ede978-e953-5552-b060-d12167607b13",
+                    "id": "9e7134fb-1f13-5f56-a1a6-87cc86700ab1",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -5797,7 +5797,7 @@
               ]
             },
             {
-              "id": "7156b8d9-4e60-5ee3-af88-e6acf01f97d1",
+              "id": "1320397e-a2ba-505c-8a50-67db0a1b591b",
               "name": "Preparación · traslado sin stock en origen",
               "request": {
                 "method": "POST",
@@ -5846,7 +5846,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "dc8ef6ea-4f17-5529-aca1-fba52e56800f",
+                    "id": "c6273647-2fba-57c3-bb07-be3c0296a777",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
@@ -5857,7 +5857,7 @@
               ]
             },
             {
-              "id": "8c6947f2-82ad-58f6-b3a2-ac009c8f0953",
+              "id": "7072388d-7f94-54b0-9c9c-8a9241a57438",
               "name": "Preparación · solicitar sin stock",
               "request": {
                 "method": "POST",
@@ -5895,7 +5895,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "69194b6d-b132-54b3-a5f7-6cdc4a2d0655",
+                    "id": "b2a13ef1-2dd5-5204-aa08-cfafbd0a6224",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -5906,7 +5906,7 @@
               ]
             },
             {
-              "id": "3407495c-c0bf-5ab3-a9f7-3aedc395a482",
+              "id": "ea3249c9-d468-5aa2-9a3e-8f540c6dcc1d",
               "name": "Preparación · aprobar sin stock",
               "request": {
                 "method": "POST",
@@ -5944,7 +5944,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "74b28673-3fae-5a17-b8c2-af7d0d2e655b",
+                    "id": "471570af-419d-5906-9344-53381568f14e",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -5955,7 +5955,7 @@
               ]
             },
             {
-              "id": "ace71e94-c7dd-5418-9063-bb3ff413b9f8",
+              "id": "1c7e5a4c-c6c3-5c90-b5b5-3f66f8b24bbb",
               "name": "Despachar sin stock → 409 STOCK_INSUFICIENTE",
               "request": {
                 "method": "POST",
@@ -5993,7 +5993,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "ed7efd61-c19f-5614-84e7-f45ed7d49bea",
+                    "id": "3ec5e290-bfde-5f65-8314-d53289f81c1b",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
@@ -6004,7 +6004,7 @@
               ]
             },
             {
-              "id": "df8919d4-0292-54f9-81d8-b7d228fd6e55",
+              "id": "359d35ee-8b49-5f41-8369-ad649ad2a5ca",
               "name": "Limpieza · anular el aprobado",
               "request": {
                 "method": "POST",
@@ -6055,7 +6055,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "955ab9e4-e6b4-52da-8d03-368ba1b0c247",
+                    "id": "603113ce-0399-5836-9b43-d8dc6476e14b",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6066,7 +6066,7 @@
               ]
             },
             {
-              "id": "262fd9f1-9ba3-567a-acc6-30f24ad07868",
+              "id": "842eccad-533a-501d-9750-06cb90cf72c8",
               "name": "Listar traslados como médico → 403",
               "request": {
                 "method": "GET",
@@ -6102,7 +6102,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "c80119d8-e8af-551f-ba5b-0c3afd3fea42",
+                    "id": "6be288a0-4f11-5564-899a-a0015f7ff4e3",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -6117,12 +6117,12 @@
       ]
     },
     {
-      "id": "3560058d-9239-52de-ad2f-90261b1e99a9",
+      "id": "471656f9-6d70-5463-8270-a0d3c20b3ab5",
       "name": "8. Pacientes",
       "description": "Acceso, enmascarado y bitácora (RN-10).",
       "item": [
         {
-          "id": "43636804-ef97-52af-ba5a-8ef03bcb13f4",
+          "id": "b48fd5c5-4bc5-5f9a-afb5-615eeafcc327",
           "name": "Buscar por documento (médico)",
           "request": {
             "method": "POST",
@@ -6172,7 +6172,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "a935667c-3f64-59a7-b474-bf3af54a6591",
+                "id": "1313a2b1-38ca-5e4b-a65e-79c5fe6f97df",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6185,7 +6185,7 @@
           ]
         },
         {
-          "id": "999bc1a0-a7f9-5bac-9f29-82c87fea5436",
+          "id": "00ec91f2-6dfc-5106-b75f-e0319b430133",
           "name": "Ver paciente (regente)",
           "request": {
             "method": "GET",
@@ -6222,7 +6222,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5114ab6e-a113-5844-8503-0a566ebe5bce",
+                "id": "826b862a-b893-5003-af93-f2a921a65b50",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6233,7 +6233,7 @@
           ]
         },
         {
-          "id": "a1417ddd-e725-53e4-91f9-be97ac1d3ffa",
+          "id": "87c43f2c-b989-5467-bf18-a30a6e3559d7",
           "name": "Prescripciones del paciente (médico)",
           "request": {
             "method": "GET",
@@ -6271,7 +6271,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "60556ec1-20a1-58b4-ad40-1542fcff645b",
+                "id": "19706401-ee2d-5c9f-bd2c-1eb2eb63c4ad",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6282,7 +6282,7 @@
           ]
         },
         {
-          "id": "89107603-e8a9-5304-859f-86499747218b",
+          "id": "5935edd9-d920-5107-8c27-6ed0b313a071",
           "name": "Buscar como auditor (enmascarado)",
           "request": {
             "method": "POST",
@@ -6332,7 +6332,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "f1d7325a-62f3-5696-9b3c-18d83ebe7c29",
+                "id": "f4db1b7d-5230-5347-9447-43bdd44d6ac6",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6344,12 +6344,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "44fae73b-16f5-5c6a-962d-59c3941d7db2",
           "name": "Errores",
           "description": "Errores representativos de pacientes.",
           "item": [
             {
-              "id": "45c82cc5-d1d5-5f83-80e7-0b92578c8834",
+              "id": "281395dc-4987-536e-9ccd-4e891ca7a165",
               "name": "Buscar como admin → 403",
               "request": {
                 "method": "POST",
@@ -6399,7 +6399,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "ad462676-1bf5-5f43-9574-ad003cfb3662",
+                    "id": "c9d38543-c808-54f4-9ef7-c111c4b662bc",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -6410,7 +6410,7 @@
               ]
             },
             {
-              "id": "ca857292-2f9c-57d8-9353-c7c2ee89868f",
+              "id": "a3b49124-3ecb-5d35-b5ea-651a740094e5",
               "name": "Documento con caracteres inválidos → 422",
               "request": {
                 "method": "POST",
@@ -6460,7 +6460,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "21be45cc-3b41-5d7f-955a-3e02972df993",
+                    "id": "1b89eed2-7d43-58bc-9902-82ea63834056",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -6471,7 +6471,7 @@
               ]
             },
             {
-              "id": "fa20bb9a-b6a1-5387-9fec-8408533cae6e",
+              "id": "e7aafe1a-15fb-515f-b781-c1736e577840",
               "name": "Clave no permitida → 422",
               "request": {
                 "method": "POST",
@@ -6521,7 +6521,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "ce1ac43e-948a-5467-8870-1487dd261c44",
+                    "id": "5ac5f462-1bd9-5be3-9a9f-396fcea6a398",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -6532,7 +6532,7 @@
               ]
             },
             {
-              "id": "94a58f51-ff6e-5733-be78-2b75ae4ff5d3",
+              "id": "adf43683-88cb-596a-b443-295fa3a64313",
               "name": "Paciente inexistente → 404",
               "request": {
                 "method": "GET",
@@ -6569,7 +6569,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "39066f2c-4016-58ea-ae6f-0222b3edd431",
+                    "id": "e1adf635-5b51-5ae9-bfb6-9bb86fc2a78a",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
@@ -6584,12 +6584,12 @@
       ]
     },
     {
-      "id": "0ebfbaf8-99ec-5c22-9389-f4c8cd806d6a",
+      "id": "903c8a48-b54a-5324-a28d-3350de9af4a4",
       "name": "9. Alertas",
       "description": "Vencimientos y stock mínimo (RN-11).",
       "item": [
         {
-          "id": "82e10397-d68b-5414-b504-adc0b3b944c6",
+          "id": "6816ae1b-504f-5087-893f-021d4580f387",
           "name": "Vencimientos",
           "request": {
             "method": "GET",
@@ -6632,7 +6632,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "2f24bcdb-a513-5495-8a3c-c20b80198df7",
+                "id": "29e2d0a3-9bdc-5328-a24d-7545485a93c1",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6645,7 +6645,7 @@
           ]
         },
         {
-          "id": "5021df13-fb4a-55d1-99e7-4de059cc80c0",
+          "id": "34fccc15-ac89-5a4a-9e3e-0767fad400b4",
           "name": "Solo vencidos",
           "request": {
             "method": "GET",
@@ -6688,7 +6688,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "1fa0bfa1-8ab2-5042-8fe4-9f2e8f2cda16",
+                "id": "47125151-4fcc-5fd3-9768-78664dfe035e",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6699,7 +6699,7 @@
           ]
         },
         {
-          "id": "f4aba172-8a9e-5d35-987f-7cd55fff5eba",
+          "id": "b4518c4a-abe7-59d6-995f-682a26590ea3",
           "name": "Stock mínimo",
           "request": {
             "method": "GET",
@@ -6742,7 +6742,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "b9dec59b-c66e-5d5a-a189-9f8bfd6c7f06",
+                "id": "a5bc91c9-fb94-5d21-a745-1975f942984c",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6753,12 +6753,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "bf48a287-2b8b-5f20-b114-3c68af9df3bc",
           "name": "Errores",
           "description": "Errores representativos de alertas.",
           "item": [
             {
-              "id": "8845e4e3-7b1c-5a7d-9328-1adcc0d77a7c",
+              "id": "9437b592-832d-5ad3-8df8-1eabaf10ef7d",
               "name": "Alertas como médico → 403",
               "request": {
                 "method": "GET",
@@ -6795,7 +6795,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "0291a4c5-ea72-58d4-847e-64509ddfa8e2",
+                    "id": "b6d60bf0-f6a0-59df-9ceb-a8135f3624c7",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -6806,7 +6806,7 @@
               ]
             },
             {
-              "id": "46293a4f-a20e-5c14-b88c-f54b99d0153d",
+              "id": "ec2fc8b7-726c-57e1-9455-f2c3f5b32498",
               "name": "Tipo inválido → 422",
               "request": {
                 "method": "GET",
@@ -6849,7 +6849,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "f3c07293-55f9-5250-8a82-28b36eb73006",
+                    "id": "2609f452-98d3-5ec7-bc4a-6657e75f32b1",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
@@ -6864,12 +6864,12 @@
       ]
     },
     {
-      "id": "197a24f7-6b7f-5b16-9e8d-b551a229fc09",
+      "id": "e3011a3c-cffb-531a-978e-972b4332ed75",
       "name": "10. Auditoría",
       "description": "Bitácora de accesos de solo lectura (RN-10).",
       "item": [
         {
-          "id": "a04711ab-3a90-5247-88a1-e509e67d1a78",
+          "id": "eacdeff7-44b7-5b7d-839a-17dabe9ff60f",
           "name": "Bitácora",
           "request": {
             "method": "GET",
@@ -6911,7 +6911,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "6824514e-45e4-598c-a682-9619b1ca299b",
+                "id": "c1d72754-06ef-5dc3-8ecc-3d7120348381",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6922,7 +6922,7 @@
           ]
         },
         {
-          "id": "39b33893-5aee-53a4-9d81-b54e660aa09e",
+          "id": "e4a058de-89f4-5a6d-97cc-491b818a37b6",
           "name": "Accesos denegados (admin)",
           "request": {
             "method": "GET",
@@ -6964,7 +6964,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "bed64f1c-30df-588f-a997-845d136faabc",
+                "id": "0bd482a4-6cc1-57b3-97ee-c3fe8abf56c7",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -6975,7 +6975,7 @@
           ]
         },
         {
-          "id": "8b4cbca4-7a65-5949-bac0-1c8c1b202163",
+          "id": "bab768cb-0dfa-5622-9fe4-b224d29108de",
           "name": "Autorizaciones de dispensación",
           "request": {
             "method": "GET",
@@ -7017,7 +7017,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "02403336-5fbb-53d3-bdfb-6c196ec02309",
+                "id": "b67466e6-b43e-57c6-b852-03ac91007c1b",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
@@ -7028,12 +7028,12 @@
           ]
         },
         {
-          "id": "57b84df4-fc0e-53d3-972e-25f2f8b6c630",
+          "id": "5705e586-a3af-5d38-9f13-59c331c25263",
           "name": "Errores",
           "description": "Errores representativos de la auditoría.",
           "item": [
             {
-              "id": "9b193dad-55fe-54cd-bf07-2c20fda8b807",
+              "id": "8e89e6af-a77e-549f-8787-ff56fa613ee4",
               "name": "Bitácora como regente → 403",
               "request": {
                 "method": "GET",
@@ -7069,7 +7069,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "0adc56da-a255-53fb-b72f-2013deaf132b",
+                    "id": "956c4061-f255-5977-988c-ef1c63d4b545",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
@@ -7080,7 +7080,7 @@
               ]
             },
             {
-              "id": "628e6f19-d0f2-517c-9f89-a58a0f64a708",
+              "id": "cd3707aa-e8ee-5bc6-9307-e9741cc94798",
               "name": "Resultado inválido → 422",
               "request": {
                 "method": "GET",
@@ -7122,7 +7122,7 @@
                 {
                   "listen": "test",
                   "script": {
-                    "id": "1275b205-2a71-571e-bd61-5918bda0c15c",
+                    "id": "b6be566f-29cf-5eed-8d23-d0ee2ab0be8e",
                     "type": "text/javascript",
                     "exec": [
                       "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
