@@ -4,7 +4,7 @@ Referencia de integración para el frontend (React). Todo lo descrito aquí sale
 backend (rutas, Form Requests, Resources, Policies, excepciones de dominio y configuración). Si el
 código y este documento discrepan, es un error del documento: avísese para corregirlo.
 
-- **Versión de la API documentada:** `v0.12.0` (hasta RN-11, alertas).
+- **Versión de la API documentada:** `v0.13.0` (hasta RN-11, alertas, y listado de dispensaciones).
 - **Fecha:** 2026-11-05.
 - Las referencias `S-nn` son los supuestos de negocio aprobados; `RN-xx` son las reglas de negocio.
 
@@ -65,7 +65,7 @@ las rutas se escriben relativas a esa base (`POST /auth/login` = `POST {base}/au
 ### 1.5 Paginación
 
 Parámetros de *query* en **todos** los listados paginados (`bodegas`, `productos`, `inventario`,
-`kardex`, `traslados`, `auditoria`, `alertas/*`; S-25, S-28, S-88):
+`kardex`, `dispensaciones`, `traslados`, `auditoria`, `alertas/*`; S-25, S-28, S-88, S-89):
 
 | Parámetro | Tipo | Límites | Por defecto |
 |---|---|---|---|
@@ -83,8 +83,9 @@ Los enlaces de `links` conservan los filtros de la *query*.
 - **Fechas de negocio** (`fecha_vencimiento`, `fecha_emision`, filtros `desde`/`hasta`):
   `Y-m-d`, rango admitido 1900-01-01 a 2099-12-31 (S-29). «Hoy» se calcula en la zona de negocio
   **America/Bogota** (S-01, S-05).
-- **Marcas de tiempo** (`created_at`, `aprobado_en`, …): ISO 8601 con desfase (`2026-11-05T14:32:10+00:00`).
-  Muéstrense convertidas a la hora local de Bogotá.
+- **Marcas de tiempo** (`created_at`, `aprobado_en`, …): ISO 8601 con desfase, ya en la hora de
+  **America/Bogota** (`2026-11-05T09:32:10-05:00`; Colombia no tiene horario de verano). Si se
+  comparan o se ordenan, háganlo como instantes (`Date`), no como texto.
 - **Estados y tipos:** cadenas en MAYÚSCULAS (`CONFIRMADA`, `EN_TRANSITO`, `AJUSTE`…). Roles en
   minúsculas (`regente_farmacia`).
 - **Textos libres con motivo** (`motivo` de ajuste, rechazo, anulación y discrepancia): 10 a 500
@@ -215,6 +216,7 @@ el login devuelven el `rol` y la lista de `habilidades`; úsense para mostrar u 
 | `GET /kardex`, `GET /kardex/{id}` | ✔ | ✔ | — | ✔ | — |
 | `GET /alertas/vencimientos`, `GET /alertas/stock-minimo` | ✔ | ✔ | — | ✔ | — |
 | `POST /dispensaciones/previsualizar`, `POST /dispensaciones` | ✔ | ✔ | — | — | — |
+| `GET /dispensaciones` | ✔ | ✔ | — | ✔ | — |
 | `GET /dispensaciones/{id}` | ✔ | ✔ | — | ✔ (paciente enmascarado) | — |
 | `POST /dispensaciones/{id}/autorizar`, `…/rechazar` | — | ✔\* (no el creador) | — | — | — |
 | `GET /traslados`, `GET /traslados/{id}` | ✔ | ✔ | — | ✔ | — |
@@ -241,7 +243,8 @@ Notas:
   cuando `enmascarado` sea `true`; no intentar «desenmascarar» ni validar formato.
 - **Bitácora (RN-10):** cada consulta permitida de pacientes y de `GET /dispensaciones/{id}` deja
   rastro, y cada `403` en esas rutas queda como `DENEGADO`. No hagan consultas «de precarga» de
-  pacientes que el usuario no pidió.
+  pacientes que el usuario no pidió. `GET /dispensaciones` (listado) no expone pacientes y **no**
+  deja rastro (ni `PERMITIDO` ni `DENEGADO`, S-89).
 
 ---
 
@@ -421,7 +424,7 @@ por día de Bogotá, `hasta ≥ desde`; S-36), `por_pagina`, `page`.
   "lote": { "id": 30, "codigo": "L-2027-01", "fecha_vencimiento": "2027-03-31" },
   "cantidad": 50, "saldo_anterior": 120, "saldo_posterior": 170, "motivo": null,
   "usuario_id": 2, "usuario": { "id": 2, "nombre": "Regente Uno" },
-  "documento": null, "created_at": "2026-11-05T14:32:10+00:00" } }
+  "documento": null, "created_at": "2026-11-05T09:32:10-05:00" } }
 ```
 
 - `tipo`: `ENTRADA`, `SALIDA_DISPENSACION`, `SALIDA_TRASLADO`, `ENTRADA_TRASLADO`, `AJUSTE`.
@@ -490,7 +493,7 @@ dispensación quedará pendiente de autorización de otro regente.
                   "producto_id": 7, "lote_id": 30,
                   "lote": { "id": 30, "codigo": "L-2027-01", "fecha_vencimiento": "2027-03-31" },
                   "cantidad": 30, "movimiento": { "id": 902, "tipo": "SALIDA_DISPENSACION", "cantidad": -30, "…": "…" } } ],
-  "created_at": "2026-11-05T15:01:00+00:00" } }
+  "created_at": "2026-11-05T10:01:00-05:00" } }
 ```
 
 - `estado`: `CONFIRMADA` (stock descontado) o `PENDIENTE_AUTORIZACION` (control especial: aún **sin**
@@ -521,6 +524,52 @@ También `409 CONFLICTO_CONCURRENCIA`.
 - Con `estado = PENDIENTE_AUTORIZACION`: mensaje «Pendiente de autorización por otro regente» y no
   mostrar lotes entregados.
 - `STOCK_INSUFICIENTE`: mostrar `disponible` y `vencido_no_dispensable` del ítem `prescripcion_item_id`.
+
+#### `GET /dispensaciones`
+
+**Quién:** aux, regente, auditor (los mismos que el detalle; médico y admin → `403`). Paginado (§1.5),
+de la **más antigua a la más reciente** (`created_at` ASC, desempate por `id`; S-89).
+
+| Query | Tipo | Límites |
+|---|---|---|
+| `estado` | texto | `CONFIRMADA`, `PENDIENTE_AUTORIZACION` o `RECHAZADA` (exacto, mayúsculas) |
+| `bodega_id` | id | entero ≥ 1; inexistente → `200` con `data: []` |
+| `por_pagina` | entero | 1–100 (25 por defecto) |
+| `page` | entero | 1–1.000.000 |
+
+Filtros combinables; sin filtros, todas. **200**:
+
+```json
+{ "data": [ { "id": 512, "estado": "PENDIENTE_AUTORIZACION", "paciente_id": 9, "prescripcion_id": 21,
+    "bodega_id": 1, "dispensado_por_id": 3, "dispensado_por": { "id": 3, "nombre": "Auxiliar Uno" },
+    "autorizado_por_id": null, "autorizado_en": null, "rechazado_por_id": null, "rechazado_en": null,
+    "motivo_rechazo": null,
+    "items": [ { "id": 820, "prescripcion_item_id": 45, "producto_id": 8,
+                 "producto": { "id": 8, "codigo": "MED-008", "nombre": "Tramadol 50 mg", "control_especial": true },
+                 "cantidad": 10 } ],
+    "created_at": "2026-11-05T10:01:00-05:00" } ],
+  "links": { "first": "…?estado=PENDIENTE_AUTORIZACION&page=1", "last": "…", "prev": null, "next": null },
+  "meta": { "current_page": 1, "per_page": 25, "total": 1, "last_page": 1, "…": "…" } }
+```
+
+- Cada fila es `DispensacionResource` **más** `dispensado_por` (`id`, `nombre`) y **sin** `paciente`
+  (solo `paciente_id`) ni `detalles` (tramos FEFO y movimientos): para eso, `GET /dispensaciones/{id}`.
+- No deja rastro en la bitácora (no expone datos del paciente); el `403` tampoco.
+
+**Errores:** `401 NO_AUTENTICADO` → `429 DEMASIADAS_SOLICITUDES` → `403 NO_AUTORIZADO` (antes que
+cualquier validación: médico o admin con una *query* inválida reciben `403`) → `422 VALIDACION`
+(`estado`, `bodega_id`, `por_pagina` o `page` mal formados o vacíos: `?bodega_id=` sin valor es `422`;
+para no filtrar, omitan el parámetro).
+
+**UX:** panel «Pendientes de autorización» del regente con
+`GET /dispensaciones?estado=PENDIENTE_AUTORIZACION` (opcionalmente `&bodega_id=`); la primera fila
+es la que más lleva esperando. Al abrir una fila, pedir `GET /dispensaciones/{id}` (trae el
+paciente, enmascarado para el auditor, y deja rastro en la bitácora); no lo precarguen para todas
+las filas. Mostrar «Autorizar»/«Rechazar» solo si el usuario tiene la habilidad
+`dispensacion.autorizar` (de `GET /auth/me`), `estado = PENDIENTE_AUTORIZACION` y
+`dispensado_por.id ≠ usuario.id` (si no, el servidor responde `403 NO_AUTORIZADO` o
+`403 AUTORIZACION_MISMO_USUARIO`). Tras autorizar o rechazar, recargar la página
+del listado.
 
 #### `GET /dispensaciones/{id}`
 
@@ -553,8 +602,8 @@ autoriza (S-58). Queda en la bitácora.
 **Errores:** `403 NO_AUTORIZADO` → `403 AUTORIZACION_MISMO_USUARIO` → `422 VALIDACION` → `409 TRANSICION_INVALIDA`.
 
 **UX:** mostrar «Autorizar» y «Rechazar» solo si el usuario tiene `dispensacion.autorizar`, el estado
-es `PENDIENTE_AUTORIZACION` y `dispensado_por_id ≠ usuario.id`. No existe un listado de
-dispensaciones pendientes (ver §7).
+es `PENDIENTE_AUTORIZACION` y `dispensado_por_id ≠ usuario.id`. Las pendientes se listan con
+`GET /dispensaciones?estado=PENDIENTE_AUTORIZACION`.
 
 ### 4.5 Pacientes
 
@@ -620,15 +669,15 @@ Crear no comprueba stock: se comprueba al despachar, sin reserva (S-62).
   "bodega_origen": { "id": 1, "codigo": "BOD-01", "nombre": "Farmacia Central" },
   "bodega_destino": { "id": 2, "codigo": "BOD-02", "nombre": "Urgencias" },
   "observaciones": "Reposición semanal", "creado_por_id": 3,
-  "solicitado_por_id": 3, "solicitado_en": "2026-11-05T13:00:00+00:00",
-  "aprobado_por_id": 2, "aprobado_en": "2026-11-05T13:20:00+00:00",
-  "despachado_por_id": 3, "despachado_en": "2026-11-05T14:00:00+00:00",
+  "solicitado_por_id": 3, "solicitado_en": "2026-11-05T08:00:00-05:00",
+  "aprobado_por_id": 2, "aprobado_en": "2026-11-05T08:20:00-05:00",
+  "despachado_por_id": 3, "despachado_en": "2026-11-05T09:00:00-05:00",
   "recibido_por_id": null, "recibido_en": null, "anulado_por_id": null, "anulado_en": null, "motivo_anulacion": null,
   "items": [ { "id": 140, "producto_id": 7, "producto": { "id": 7, "codigo": "MED-007", "nombre": "Acetaminofén 500 mg" },
                "lote_id": 30, "lote": { "id": 30, "codigo": "L-2027-01", "fecha_vencimiento": "2027-03-31" },
                "cantidad": 40, "cantidad_recibida": null, "discrepancia": null } ],
   "discrepancias": [],
-  "created_at": "2026-11-05T12:50:00+00:00", "updated_at": "2026-11-05T14:00:00+00:00" } }
+  "created_at": "2026-11-05T07:50:00-05:00", "updated_at": "2026-11-05T09:00:00-05:00" } }
 ```
 
 `discrepancias` repite, en una lista plana, las discrepancias de los ítems (`DiscrepanciaResource`, ver
@@ -747,8 +796,8 @@ baja alguna, advertir que se generará una discrepancia.
 { "data": { "id": 12, "traslado_item_id": 140, "traslado_id": 70, "producto_id": 7, "lote_id": 30,
   "cantidad": 5, "estado": "RESUELTA", "tipo_resolucion": "REINTEGRO_ORIGEN",
   "motivo": "Unidades devueltas por el mensajero", "resuelto_por_id": 2,
-  "resuelto_en": "2026-11-05T16:00:00+00:00", "movimiento_kardex_id": 950,
-  "created_at": "2026-11-05T15:30:00+00:00" } }
+  "resuelto_en": "2026-11-05T11:00:00-05:00", "movimiento_kardex_id": 950,
+  "created_at": "2026-11-05T10:30:00-05:00" } }
 ```
 
 **Errores (S-73):** `403 NO_AUTORIZADO` → `403 SEGREGACION_FUNCIONES` → `422 VALIDACION` →
@@ -771,7 +820,7 @@ Query: `usuario_id`, `paciente_id`, `resultado` (`PERMITIDO` \| `DENEGADO`), `ac
 { "id": 330, "usuario_id": 5, "usuario": { "id": 5, "nombre": "Auditor Uno", "rol": "auditor" },
   "paciente_id": 9, "accion": "PACIENTE_CONSULTAR", "resultado": "PERMITIDO",
   "entidad": null, "entidad_id": null, "ruta": "api/v1/pacientes/{paciente}", "metodo": "GET",
-  "ip": "10.0.0.8", "correlation_id": "6f1c…", "created_at": "2026-11-05T15:10:00+00:00" }
+  "ip": "10.0.0.8", "correlation_id": "6f1c…", "created_at": "2026-11-05T10:10:00-05:00" }
 ```
 
 `entidad`: `dispensacion`, `movimiento_kardex`, `traslado`, `discrepancia` o `null`.
@@ -902,8 +951,8 @@ el estado con la habilidad y el usuario:
   frontend. Hasta entonces, en desarrollo úsese un *proxy* del servidor de desarrollo (p. ej. `server.proxy` de Vite).
 - **`/health` y `/ready`:** llegan con la Parte D. Hoy existe `GET /up` (fuera de `/api/v1`).
 - Sin endpoints (aunque exista la habilidad o el rol): alta de prescripciones (`prescripcion.crear`),
-  gestión de usuarios, pacientes y stock mínimo, modificación de bodegas/productos, listado de
-  dispensaciones (p. ej. pendientes de autorización) y listado de discrepancias fuera del traslado.
+  gestión de usuarios, pacientes y stock mínimo, modificación de bodegas/productos y listado de
+  discrepancias fuera del traslado.
 
 ---
 
@@ -921,3 +970,4 @@ el estado con la habilidad y el usuario:
 |---|---|---|
 | 2026-11-05 | `v0.11.0` (+ RN-11 en revisión) | Primera versión del contrato: auth, catálogo, inventario y kardex, dispensación (FEFO, idempotencia, control especial), pacientes (privacidad), traslados y discrepancias, auditoría; alertas RN-11 en revisión. |
 | 2026-11-05 | `v0.12.0` (RN-11) | Alertas cerradas (§4.8): `GET /alertas/vencimientos` y `GET /alertas/stock-minimo` sin la marca «en revisión»; `dias_restantes` (S-83), filtros y `meta.hoy`/`meta.dias_alerta_vencimiento` (S-84), orden con desempates (S-85), inactivos y mínimo 0 (S-86), umbral 0 o negativo (S-87); errores con `401 NO_AUTENTICADO`. `GET /bodegas` y `GET /productos` aceptan y validan `por_pagina` (1–100, 25) y `page` (≤ 1.000.000) → `422 VALIDACION` fuera de rango, orden `nombre` + `id` (S-88). |
+| 2026-11-05 | `v0.13.0` | Nuevo `GET /dispensaciones` (§4.4, S-89): listado paginado (`por_pagina` 1–100, 25; `page` ≤ 1.000.000) con filtros `estado` y `bodega_id` (vacío → `422`), orden `created_at` ASC + `id`; filas con `dispensado_por {id, nombre}`, sin `paciente` ni `detalles`; aux, regente y auditor (médico y admin `403`, antes que la validación); sin rastro en la bitácora. Matriz de permisos (§3.2), nota de UX del panel de pendientes del regente y retirada de §6 («sin listado de dispensaciones»). Corrección (§1.6 y ejemplos): las marcas de tiempo salen en hora de Bogotá con desfase `-05:00`, no `+00:00`. |

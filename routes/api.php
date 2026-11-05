@@ -56,6 +56,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('alertas/vencimientos', [AlertaController::class, 'vencimientos'])->can(Habilidad::InventarioConsultar->value)->name('alertas.vencimientos');
         Route::get('alertas/stock-minimo', [AlertaController::class, 'stockMinimo'])->can(Habilidad::InventarioConsultar->value)->name('alertas.stock-minimo');
 
+        // S-89 listado de dispensaciones (panel de pendientes del regente): mismos roles que el detalle
+        // (auxiliar, regente, auditor). Fuera del grupo de la bitácora: no expone pacientes (solo paciente_id).
+        Route::get('dispensaciones', [DispensacionController::class, 'index'])->can('viewAny', Dispensacion::class)->name('dispensaciones.index');
+
         // RN-02 dispensación FEFO: dispensacion.crear (auxiliar, regente). Previsualizar no cambia stock ni kardex.
         Route::post('dispensaciones/previsualizar', [DispensacionController::class, 'previsualizar'])->can('create', Dispensacion::class)->name('dispensaciones.previsualizar');
         Route::post('dispensaciones', [DispensacionController::class, 'store'])->can('create', Dispensacion::class)->name('dispensaciones.store');

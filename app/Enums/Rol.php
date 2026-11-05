@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Enums\Concerns\ConValores;
+
 /**
  * Roles del sistema (sección 3 de la prueba). Se guardan en `users.rol`,
  * respaldados por un CHECK en la BD.
@@ -14,6 +16,8 @@ namespace App\Enums;
  */
 enum Rol: string
 {
+    use ConValores;
+
     case AuxiliarFarmacia = 'auxiliar_farmacia';
     case RegenteFarmacia = 'regente_farmacia';
     case Medico = 'medico';
@@ -87,13 +91,5 @@ enum Rol: string
     public function puede(Habilidad $habilidad): bool
     {
         return in_array($habilidad, $this->habilidades(), true);
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function valores(): array
-    {
-        return array_map(static fn (self $rol): string => $rol->value, self::cases());
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventario;
 
+use App\Http\Requests\Concerns\ReglasPaginacion;
 use App\Models\MovimientoKardex;
 use App\Providers\AppServiceProvider;
 use App\Services\Inventario\FiltrosKardex;
@@ -19,6 +20,8 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class IndexKardexRequest extends FormRequest
 {
+    use ReglasPaginacion;
+
     public const FECHA_MINIMA = '1900-01-01';
 
     public const FECHA_LIMITE = '2100-01-01';
@@ -44,8 +47,7 @@ class IndexKardexRequest extends FormRequest
             'desde' => $fecha,
             // Solo se compara con `desde` si viene: sin él, Laravel intentaría parsear el texto 'desde'.
             'hasta' => $this->filled('desde') ? [...$fecha, 'after_or_equal:desde'] : $fecha,
-            'por_pagina' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::POR_PAGINA_MAXIMO],
-            'page' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::PAGINA_MAXIMA],
+            ...$this->reglasPaginacion(),
         ];
     }
 
@@ -63,7 +65,7 @@ class IndexKardexRequest extends FormRequest
             existenciaId: $entero('existencia_id'),
             desde: isset($validados['desde']) ? Negocio::inicioDelDia($validados['desde']) : null,
             hastaExclusivo: isset($validados['hasta']) ? Negocio::inicioDelDia($validados['hasta'], 1) : null,
-            porPagina: (int) ($validados['por_pagina'] ?? IndexInventarioRequest::POR_PAGINA_DEFECTO),
+            porPagina: $this->porPagina(),
         );
     }
 }

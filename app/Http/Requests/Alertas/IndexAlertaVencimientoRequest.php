@@ -6,7 +6,7 @@ namespace App\Http\Requests\Alertas;
 
 use App\Enums\Habilidad;
 use App\Enums\TipoAlertaVencimiento;
-use App\Http\Requests\Inventario\IndexInventarioRequest;
+use App\Http\Requests\Concerns\ReglasPaginacion;
 use App\Providers\AppServiceProvider;
 use App\Services\Inventario\FiltrosAlertaVencimiento;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,6 +18,8 @@ use Illuminate\Validation\Rule;
  */
 class IndexAlertaVencimientoRequest extends FormRequest
 {
+    use ReglasPaginacion;
+
     public function authorize(): bool
     {
         return $this->user()?->can(Habilidad::InventarioConsultar->value) ?? false;
@@ -34,8 +36,7 @@ class IndexAlertaVencimientoRequest extends FormRequest
             'bodega_id' => $id,
             'producto_id' => $id,
             'tipo' => ['sometimes', 'string', Rule::in(TipoAlertaVencimiento::valores())],
-            'por_pagina' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::POR_PAGINA_MAXIMO],
-            'page' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::PAGINA_MAXIMA],
+            ...$this->reglasPaginacion(),
         ];
     }
 
@@ -48,7 +49,7 @@ class IndexAlertaVencimientoRequest extends FormRequest
             bodegaId: isset($validados['bodega_id']) ? (int) $validados['bodega_id'] : null,
             productoId: isset($validados['producto_id']) ? (int) $validados['producto_id'] : null,
             tipo: isset($validados['tipo']) ? TipoAlertaVencimiento::from($validados['tipo']) : null,
-            porPagina: (int) ($validados['por_pagina'] ?? IndexInventarioRequest::POR_PAGINA_DEFECTO),
+            porPagina: $this->porPagina(),
         );
     }
 }

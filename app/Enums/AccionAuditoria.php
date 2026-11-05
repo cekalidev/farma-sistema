@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Enums\Concerns\ConValores;
+
 /**
  * Acción registrada en la bitácora `auditoria_accesos` (RN-10). Respaldada por un CHECK en la BD.
  *
@@ -14,6 +16,8 @@ namespace App\Enums;
  */
 enum AccionAuditoria: string
 {
+    use ConValores;
+
     case PacienteConsultar = 'PACIENTE_CONSULTAR';
     case PacienteBuscar = 'PACIENTE_BUSCAR';
     case PacientePrescripciones = 'PACIENTE_PRESCRIPCIONES';
@@ -35,13 +39,5 @@ enum AccionAuditoria: string
             'api.v1.dispensaciones.show' => self::DispensacionConsultar,
             default => null,
         };
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function valores(): array
-    {
-        return array_map(static fn (self $accion): string => $accion->value, self::cases());
     }
 }

@@ -6,7 +6,7 @@ namespace App\Http\Requests\Auditoria;
 
 use App\Enums\AccionAuditoria;
 use App\Enums\ResultadoAcceso;
-use App\Http\Requests\Inventario\IndexInventarioRequest;
+use App\Http\Requests\Concerns\ReglasPaginacion;
 use App\Http\Requests\Inventario\IndexKardexRequest;
 use App\Models\AuditoriaAcceso;
 use App\Providers\AppServiceProvider;
@@ -22,6 +22,8 @@ use Illuminate\Validation\Rule;
  */
 class IndexAuditoriaRequest extends FormRequest
 {
+    use ReglasPaginacion;
+
     public function authorize(): bool
     {
         return $this->user()?->can('viewAny', AuditoriaAcceso::class) ?? false;
@@ -42,8 +44,7 @@ class IndexAuditoriaRequest extends FormRequest
             'accion' => ['sometimes', 'string', Rule::enum(AccionAuditoria::class)],
             'desde' => $fecha,
             'hasta' => $this->filled('desde') ? [...$fecha, 'after_or_equal:desde'] : $fecha,
-            'por_pagina' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::POR_PAGINA_MAXIMO],
-            'page' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::PAGINA_MAXIMA],
+            ...$this->reglasPaginacion(),
         ];
     }
 
@@ -59,7 +60,7 @@ class IndexAuditoriaRequest extends FormRequest
             accion: isset($validados['accion']) ? AccionAuditoria::from($validados['accion']) : null,
             desde: isset($validados['desde']) ? Negocio::inicioDelDia($validados['desde']) : null,
             hastaExclusivo: isset($validados['hasta']) ? Negocio::inicioDelDia($validados['hasta'], 1) : null,
-            porPagina: (int) ($validados['por_pagina'] ?? IndexInventarioRequest::POR_PAGINA_DEFECTO),
+            porPagina: $this->porPagina(),
         );
     }
 }

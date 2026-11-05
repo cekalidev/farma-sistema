@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Enums\Concerns\ConValores;
+
 /**
  * Estados del traslado (RN-07). ÚNICA fuente de las transiciones: `puede()` decide si una acción es
  * válida desde el estado y `tras()` da el estado resultante. Los servicios lo consultan sobre la
@@ -19,6 +21,8 @@ namespace App\Enums;
  */
 enum TrasladoEstado: string
 {
+    use ConValores;
+
     case Borrador = 'BORRADOR';
     case Solicitado = 'SOLICITADO';
     case Aprobado = 'APROBADO';
@@ -79,13 +83,5 @@ enum TrasladoEstado: string
     public function esFinal(): bool
     {
         return $this->accionesPermitidas() === [];
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function valores(): array
-    {
-        return array_map(static fn (self $estado): string => $estado->value, self::cases());
     }
 }

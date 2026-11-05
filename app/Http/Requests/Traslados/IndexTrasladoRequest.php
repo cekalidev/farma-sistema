@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Traslados;
 
 use App\Enums\TrasladoEstado;
-use App\Http\Requests\Inventario\IndexInventarioRequest;
+use App\Http\Requests\Concerns\ReglasPaginacion;
 use App\Models\Traslado;
 use App\Providers\AppServiceProvider;
 use App\Services\Traslados\FiltrosTraslado;
@@ -18,6 +18,8 @@ use Illuminate\Validation\Rule;
  */
 class IndexTrasladoRequest extends FormRequest
 {
+    use ReglasPaginacion;
+
     public function authorize(): bool
     {
         return $this->user()?->can('viewAny', Traslado::class) ?? false;
@@ -35,8 +37,7 @@ class IndexTrasladoRequest extends FormRequest
             'bodega_origen_id' => $id,
             'bodega_destino_id' => $id,
             'bodega_id' => $id,
-            'por_pagina' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::POR_PAGINA_MAXIMO],
-            'page' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.IndexInventarioRequest::PAGINA_MAXIMA],
+            ...$this->reglasPaginacion(),
         ];
     }
 
@@ -50,7 +51,7 @@ class IndexTrasladoRequest extends FormRequest
             bodegaOrigenId: isset($validados['bodega_origen_id']) ? (int) $validados['bodega_origen_id'] : null,
             bodegaDestinoId: isset($validados['bodega_destino_id']) ? (int) $validados['bodega_destino_id'] : null,
             bodegaId: isset($validados['bodega_id']) ? (int) $validados['bodega_id'] : null,
-            porPagina: (int) ($validados['por_pagina'] ?? IndexInventarioRequest::POR_PAGINA_DEFECTO),
+            porPagina: $this->porPagina(),
         );
     }
 }

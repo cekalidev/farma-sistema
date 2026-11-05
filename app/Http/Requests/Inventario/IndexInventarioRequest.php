@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventario;
 
+use App\Http\Requests\Concerns\ReglasPaginacion;
 use App\Models\Existencia;
 use App\Providers\AppServiceProvider;
 use App\Services\Inventario\FiltrosInventario;
@@ -12,12 +13,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /** GET /api/v1/inventario?bodega_id=&producto_id=&lote_id=&por_pagina= (RN-01-AC9). */
 class IndexInventarioRequest extends FormRequest
 {
-    public const POR_PAGINA_DEFECTO = 25;
-
-    public const POR_PAGINA_MAXIMO = 100;
-
-    /** Evita offsets absurdos (page * por_pagina) que PostgreSQL tendría que recorrer o rechazar. */
-    public const PAGINA_MAXIMA = 1_000_000;
+    use ReglasPaginacion;
 
     public function authorize(): bool
     {
@@ -36,8 +32,7 @@ class IndexInventarioRequest extends FormRequest
             'bodega_id' => $id,
             'producto_id' => $id,
             'lote_id' => $id,
-            'por_pagina' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.self::POR_PAGINA_MAXIMO],
-            'page' => ['sometimes', 'numeric', 'integer', 'min:1', 'max:'.self::PAGINA_MAXIMA],
+            ...$this->reglasPaginacion(),
         ];
     }
 
@@ -50,7 +45,7 @@ class IndexInventarioRequest extends FormRequest
             bodegaId: isset($validados['bodega_id']) ? (int) $validados['bodega_id'] : null,
             productoId: isset($validados['producto_id']) ? (int) $validados['producto_id'] : null,
             loteId: isset($validados['lote_id']) ? (int) $validados['lote_id'] : null,
-            porPagina: (int) ($validados['por_pagina'] ?? self::POR_PAGINA_DEFECTO),
+            porPagina: $this->porPagina(),
         );
     }
 }

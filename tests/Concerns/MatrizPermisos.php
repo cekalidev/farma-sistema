@@ -611,6 +611,24 @@ final class MatrizPermisos
                         ->and(self::accesosPermitidos())->toBe([...$antes, 'PACIENTE_PRESCRIPCIONES']);
                 },
             ],
+            // S-89: listado sin paciente anidado; no escribe en la bitácora (ni PERMITIDO ni DENEGADO).
+            'GET /api/v1/dispensaciones' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    self::dispensacionPendiente(20, 3);
+
+                    return ['uri' => '/api/v1/dispensaciones?estado=PENDIENTE_AUTORIZACION'];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): array => [...self::estadoDispensaciones(), AuditoriaAcceso::query()->count()],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toHaveCount(1)
+                        ->and($r->json('data.0.estado'))->toBe('PENDIENTE_AUTORIZACION')
+                        ->and($r->json('data.0'))->not->toHaveKey('paciente')
+                        ->and(AuditoriaAcceso::query()->count())->toBe($antes[3]);
+                },
+            ],
             'GET /api/v1/dispensaciones/{id}' => [
                 'metodo' => 'GET',
                 'preparar' => fn (): array => [

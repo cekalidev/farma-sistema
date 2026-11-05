@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use App\Enums\Concerns\ConValores;
+
 /**
  * Tipos de movimiento de kardex (RN-06-AC1). La BD respalda valores y signo con CHECK.
  */
 enum TipoMovimiento: string
 {
+    use ConValores;
+
     /** Compra / entrada de inventario (RN-01, S-17). */
     case Entrada = 'ENTRADA';
     /** Salida por dispensación (RN-02). */
@@ -43,13 +47,5 @@ enum TipoMovimiento: string
     public function exigeMotivo(): bool
     {
         return $this === self::Ajuste;
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function valores(): array
-    {
-        return array_map(static fn (self $tipo): string => $tipo->value, self::cases());
     }
 }

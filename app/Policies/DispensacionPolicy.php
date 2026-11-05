@@ -18,7 +18,7 @@ use App\Models\User;
  * El servicio (AutorizacionDispensacion) repite la segunda comprobación y la BD la respalda con CHECK.
  *
  * RN-10-AC4 detalle (anida al paciente, S-77): quien consulta pacientes y además inventario
- * (auxiliar, regente, auditor). Médico y admin → 403.
+ * (auxiliar, regente, auditor). Médico y admin → 403. El listado (viewAny, S-89) usa los mismos roles.
  *
  * Ojo: `autorizar` y `rechazar` no devuelven false para el creador, LANZAN AutorizacionMismoUsuario
  * (403 con su propio código). Están pensadas solo para el middleware `can:` de las rutas; no las
@@ -32,10 +32,19 @@ final class DispensacionPolicy
         return $user->tieneHabilidad(Habilidad::DispensacionCrear);
     }
 
-    public function view(User $user, Dispensacion $dispensacion): bool
+    /**
+     * Listado (S-89): mismos roles que el detalle (auxiliar, regente, auditor) aunque no anide al
+     * paciente, para que quien ve la fila pueda abrir siempre su detalle.
+     */
+    public function viewAny(User $user): bool
     {
         return $user->tieneHabilidad(Habilidad::PacienteConsultar)
             && $user->tieneHabilidad(Habilidad::InventarioConsultar);
+    }
+
+    public function view(User $user, Dispensacion $dispensacion): bool
+    {
+        return $this->viewAny($user);
     }
 
     /** @throws AutorizacionMismoUsuario */

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dispensacion\IndexDispensacionRequest;
 use App\Http\Requests\Dispensacion\PrevisualizarDispensacionRequest;
 use App\Http\Requests\Dispensacion\RechazarDispensacionRequest;
 use App\Http\Requests\Dispensacion\StoreDispensacionRequest;
@@ -18,6 +19,7 @@ use App\Services\Dispensacion\RespuestaIdempotente;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class DispensacionController extends Controller
 {
@@ -26,6 +28,12 @@ class DispensacionController extends Controller
         private readonly AutorizacionDispensacion $autorizacion,
         private readonly ConsultaDispensacionService $consulta,
     ) {}
+
+    /** S-89: listado paginado sin el paciente anidado (no pasa por la bitácora). Rol: Policy de la ruta. */
+    public function index(IndexDispensacionRequest $request): AnonymousResourceCollection
+    {
+        return DispensacionResource::collection($this->consulta->listar($request->filtros()));
+    }
 
     /** RN-10-AC4: detalle con el paciente anidado (enmascarado para el auditor). Rol: Policy de la ruta. */
     public function show(Request $request, Dispensacion $dispensacion): DispensacionResource
