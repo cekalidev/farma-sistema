@@ -144,10 +144,10 @@ describe('BASE-AC2 credenciales inválidas', function () {
 describe('BASE-AC3 rutas protegidas sin token o con token revocado', function () {
     it('BASE-AC3: sin token responde 401 NO_AUTENTICADO y no cambia nada', function (string $clave) {
         $def = MatrizPermisos::endpoint($clave);
-        [$uri, $cuerpo] = MatrizPermisos::preparar($clave);
+        [$uri, $cuerpo, $cabeceras] = MatrizPermisos::preparar($clave);
         $antes = MatrizPermisos::instantanea($clave);
 
-        $respuesta = $this->json($def['metodo'], $uri, $cuerpo);
+        $respuesta = $this->json($def['metodo'], $uri, $cuerpo, $cabeceras);
 
         esperarError($respuesta, 401, 'NO_AUTENTICADO');
         expect(MatrizPermisos::instantanea($clave))->toBe($antes);
@@ -164,10 +164,10 @@ describe('BASE-AC3 rutas protegidas sin token o con token revocado', function ()
         expect($usuario->tokens()->count())->toBe(0);
 
         olvidarAutenticacion();
-        [$uri, $cuerpo] = MatrizPermisos::preparar($clave);
+        [$uri, $cuerpo, $cabeceras] = MatrizPermisos::preparar($clave);
         $antes = MatrizPermisos::instantanea($clave);
 
-        $respuesta = $this->withToken($token)->json($def['metodo'], $uri, $cuerpo);
+        $respuesta = $this->withToken($token)->json($def['metodo'], $uri, $cuerpo, $cabeceras);
 
         esperarError($respuesta, 401, 'NO_AUTENTICADO');
         expect(MatrizPermisos::instantanea($clave))->toBe($antes);
@@ -234,10 +234,10 @@ describe('BASE-AC4 matriz rol × endpoint', function () {
     it('BASE-AC4: cada rol obtiene 2xx si la matriz lo permite y 403 NO_AUTORIZADO si no, sin efectos al denegar', function (string $rol, string $clave) {
         $usuario = actuarComo($rol);
         $def = MatrizPermisos::endpoint($clave);
-        [$uri, $cuerpo] = MatrizPermisos::preparar($clave);
+        [$uri, $cuerpo, $cabeceras] = MatrizPermisos::preparar($clave);
         $antes = MatrizPermisos::instantanea($clave);
 
-        $respuesta = $this->json($def['metodo'], $uri, $cuerpo);
+        $respuesta = $this->json($def['metodo'], $uri, $cuerpo, $cabeceras);
 
         if (MatrizPermisos::permitido($rol, $clave)) {
             $respuesta->assertSuccessful();

@@ -115,7 +115,7 @@ function rn03Cuerpo(int $bodegaId, array $items): array
 /** @param  list<array{0: int, 1: int}>  $items */
 function rn03Dispensar(int $bodegaId, array $items): TestResponse
 {
-    return test()->postJson(RN03_URI, rn03Cuerpo($bodegaId, $items)['cuerpo']);
+    return test()->postJson(RN03_URI, rn03Cuerpo($bodegaId, $items)['cuerpo'], cabecerasDispensacion());
 }
 
 function rn03Ajuste(int $existenciaId, int $cantidad): TestResponse
@@ -434,7 +434,7 @@ describe('RN-03-AC2 stock insuficiente, todo o nada', function () {
         $antes = rn03Instantanea();
 
         ['cuerpo' => $cuerpo, 'items' => $items] = rn03Cuerpo($bodega->id, [[$p1->id, 5], [$p2->id, 5]]);
-        $r = $this->postJson(RN03_URI, $cuerpo);
+        $r = $this->postJson(RN03_URI, $cuerpo, cabecerasDispensacion());
 
         rn03AfirmarInsuficiente($r, 5, 4, 0);
         expect($r->json('error.detalles.producto_id'))->toBe($p2->id)
@@ -463,7 +463,7 @@ describe('RN-03-AC2 stock insuficiente, todo o nada', function () {
             ? [[$p1->id, 4], [$p3->id, 9], [$p2->id, 5]]
             : [[$p1->id, 4], [$p2->id, 5], [$p3->id, 9]];
         ['cuerpo' => $cuerpo, 'items' => $items] = rn03Cuerpo($bodega->id, $lineas);
-        $r = $this->postJson(RN03_URI, $cuerpo);
+        $r = $this->postJson(RN03_URI, $cuerpo, cabecerasDispensacion());
 
         [$producto, $solicitado, $disponible] = $invertir ? [$p3->id, 9, 2] : [$p2->id, 5, 4];
         rn03AfirmarInsuficiente($r, $solicitado, $disponible, 0);
@@ -720,7 +720,7 @@ describe('RN-03-AC3 S-48 conflicto de concurrencia → 409 reintentable', functi
                 actuarComo('auxiliar_farmacia');
                 $cuerpo = rn03Cuerpo($bodega->id, [[$producto->id, 2]])['cuerpo'];
 
-                return fn (): TestResponse => test()->postJson(RN03_URI, $cuerpo);
+                return fn (): TestResponse => test()->postJson(RN03_URI, $cuerpo, cabecerasDispensacion());
             },
             'ajuste' => function () use ($existencia): Closure {
                 actuarComo('regente_farmacia');
@@ -783,7 +783,7 @@ describe('RN-03-AC3 S-48 conflicto de concurrencia → 409 reintentable', functi
         $log = rn03LogDeTest();
         $antes = rn03Instantanea();
 
-        $r = $this->postJson(RN03_URI, $cuerpo);
+        $r = $this->postJson(RN03_URI, $cuerpo, cabecerasDispensacion());
 
         esperarError($r, $status, $codigo);
         expect($r->json('error.codigo'))->not->toBe('CONFLICTO_CONCURRENCIA')

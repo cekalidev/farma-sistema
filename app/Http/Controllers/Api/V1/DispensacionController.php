@@ -9,18 +9,37 @@ use App\Http\Requests\Dispensacion\PrevisualizarDispensacionRequest;
 use App\Http\Requests\Dispensacion\StoreDispensacionRequest;
 use App\Http\Resources\DispensacionResource;
 use App\Http\Resources\PrevisualizacionDispensacionResource;
+use App\Models\Dispensacion;
 use App\Services\Dispensacion\DispensacionService;
+use App\Services\Dispensacion\RespuestaIdempotente;
 use Illuminate\Http\JsonResponse;
 
 class DispensacionController extends Controller
 {
     public function __construct(private readonly DispensacionService $dispensaciones) {}
 
+    /**
+     * RN-09: la respuesta (status + JSON literal) la guarda el servicio con la dispensación; un
+     * reintento con la misma Idempotency-Key y el mismo cuerpo recibe esa misma respuesta con
+     * `Idempotent-Replayed: true`.
+     */
     public function store(StoreDispensacionRequest $request): JsonResponse
     {
-        return (new DispensacionResource($this->dispensaciones->crear($request->datos())))
-            ->response()
-            ->setStatusCode(201);
+        $respuesta = $this->dispensaciones->crear(
+            $request->datos(),
+            $request->claveIdempotencia(),
+            fn (Dispensacion $dispensacion): RespuestaIdempotente => new RespuestaIdempotente(
+                201,
+                (string) (new DispensacionResource($dispensacion))->response($request)->getContent(),
+            ),
+        );
+
+        return new JsonResponse(
+            $respuesta->cuerpo,
+            $respuesta->status,
+            $respuesta->reproducida ? ['Idempotent-Replayed' => 'true'] : [],
+            json: true,
+        );
     }
 
     public function previsualizar(PrevisualizarDispensacionRequest $request): PrevisualizacionDispensacionResource

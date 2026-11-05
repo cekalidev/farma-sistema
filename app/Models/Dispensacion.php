@@ -13,8 +13,9 @@ use Illuminate\Support\Carbon;
 
 /**
  * Dispensación (RN-02). Solo la crea App\Services\Dispensacion\DispensacionService; el stock lo
- * descuenta App\Services\Dispensacion\SalidaStock. Columnas de RN-05 (autorización/rechazo) y
- * RN-09 (idempotency_key, request_hash) existen ya en la tabla, pero su lógica llega en esas RN.
+ * descuenta App\Services\Dispensacion\SalidaStock. Columnas de RN-05 (autorización/rechazo) existen
+ * ya en la tabla, pero su lógica llega en esa RN. RN-09: idempotency_key + request_hash (único por
+ * usuario) y la respuesta original (respuesta_status, respuesta_cuerpo: JSON literal, sin cast).
  *
  * @property int $id
  * @property int $paciente_id
@@ -29,6 +30,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $motivo_rechazo
  * @property string|null $idempotency_key
  * @property string|null $request_hash
+ * @property int|null $respuesta_status
+ * @property string|null $respuesta_cuerpo
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read Paciente $paciente
@@ -52,6 +55,15 @@ class Dispensacion extends Model
     protected $guarded = ['*'];
 
     /**
+     * RN-09: datos internos de la idempotencia; nunca salen en una serialización del modelo
+     * (toArray/toJson). La clave y el hash identifican peticiones del cliente y la respuesta
+     * guardada es un JSON entero que solo reproduce el servicio.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['idempotency_key', 'request_hash', 'respuesta_status', 'respuesta_cuerpo'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -60,6 +72,7 @@ class Dispensacion extends Model
             'estado' => EstadoDispensacion::class,
             'autorizado_en' => 'datetime',
             'rechazado_en' => 'datetime',
+            'respuesta_status' => 'integer',
         ];
     }
 

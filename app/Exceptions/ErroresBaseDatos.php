@@ -22,6 +22,9 @@ final class ErroresBaseDatos
     /** 22003 numeric_value_out_of_range. */
     public const FUERA_DE_RANGO = '22003';
 
+    /** 23505 unique_violation. */
+    public const VIOLACION_UNICA = '23505';
+
     /** 23001 restrict_violation: ERRCODE del trigger de inmutabilidad del kardex. */
     public const RESTRICCION_VIOLADA = '23001';
 
@@ -109,11 +112,31 @@ final class ErroresBaseDatos
             return false;
         }
 
-        $mensajeDriver = is_array($consulta->errorInfo) && is_string($consulta->errorInfo[2] ?? null)
-            ? $consulta->errorInfo[2]
-            : '';
+        return str_contains(self::mensajeDriver($consulta), self::MARCA_KARDEX_INMUTABLE);
+    }
 
-        return str_contains($mensajeDriver, self::MARCA_KARDEX_INMUTABLE);
+    /**
+     * ¿El fallo es un 23505 sobre ESE índice/restricción única? Lo usa quien sabe resolver ese
+     * choque concreto (RN-09: misma Idempotency-Key); cualquier otro 23505 sigue siendo un fallo
+     * interno (500).
+     *
+     * Independiente del idioma del servidor (lc_messages): la plantilla del mensaje y las comillas
+     * se traducen ("…" en inglés, «…» en español), el nombre del índice nunca. Por eso busca el
+     * nombre como identificador completo (sin letras, dígitos ni _ pegados) y solo en la primera
+     * línea del mensaje: las siguientes (DETAIL) contienen los valores, que vienen del cliente.
+     */
+    public static function violaIndiceUnico(Throwable $e, string $indice): bool
+    {
+        $consulta = self::consultaFallida($e);
+
+        if ($consulta === null || (string) $consulta->getCode() !== self::VIOLACION_UNICA) {
+            return false;
+        }
+
+        $primeraLinea = strtok(self::mensajeDriver($consulta), "\r\n");
+
+        return is_string($primeraLinea)
+            && preg_match('/(?<![\p{L}\p{N}_$])'.preg_quote($indice, '/').'(?![\p{L}\p{N}_$])/u', $primeraLinea) === 1;
     }
 
     /**
@@ -149,6 +172,14 @@ final class ErroresBaseDatos
         Log::log($nivel, 'Error de base de datos (SQL y valores omitidos).', $contexto);
 
         return false;
+    }
+
+    /** Texto del error de PostgreSQL (errorInfo[2]); '' si el driver no lo dio. */
+    private static function mensajeDriver(QueryException $consulta): string
+    {
+        return is_array($consulta->errorInfo) && is_string($consulta->errorInfo[2] ?? null)
+            ? $consulta->errorInfo[2]
+            : '';
     }
 
     private static function algunBindingVieneDelCliente(QueryException $consulta, Request $request): bool

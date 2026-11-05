@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\Rol;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -94,4 +95,16 @@ function cuerpoDatos(TestResponse $respuesta): array
 function olvidarAutenticacion(): void
 {
     app('auth')->forgetGuards();
+}
+
+/**
+ * RN-09: cabeceras de una creación de dispensación (POST /api/v1/dispensaciones) con una
+ * `Idempotency-Key` NUEVA en cada llamada, para las peticiones que no prueban la idempotencia.
+ *
+ * @param  array<string, string>  $cabeceras  otras cabeceras a enviar
+ * @return array<string, string>
+ */
+function cabecerasDispensacion(array $cabeceras = []): array
+{
+    return $cabeceras + ['Idempotency-Key' => (string) Str::uuid()];
 }

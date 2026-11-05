@@ -64,7 +64,7 @@ function rn03ConcEnParalelo(array $peticiones): array
         function (int $i) use ($peticiones): string {
             $resultado = ['status' => 'sin_resultado', 'codigo' => null, 'error' => [], 'id' => null, 'detalles' => []];
             try {
-                $respuesta = test()->postJson('/api/v1/dispensaciones', $peticiones[$i]['cuerpo']);
+                $respuesta = test()->postJson('/api/v1/dispensaciones', $peticiones[$i]['cuerpo'], cabecerasDispensacion());
                 $resultado = [
                     'status' => $respuesta->getStatusCode(),
                     'codigo' => $respuesta->json('error.codigo'),
@@ -372,7 +372,7 @@ it('RN-03-AC5 sin transacción envolvente: si el kardex falla después de descon
     $antes = $contar();
 
     Sanctum::actingAs($usuario);
-    $r = $this->postJson('/api/v1/dispensaciones', $cuerpo);
+    $r = $this->postJson('/api/v1/dispensaciones', $cuerpo, cabecerasDispensacion());
 
     esperarError($r, 500, 'ERROR_INTERNO');
     expect(mb_strtolower((string) $r->getContent()))->not->toContain('fallo inyectado')
@@ -390,7 +390,7 @@ it('RN-03-AC5 sin transacción envolvente: si el kardex falla después de descon
 
     olvidarAutenticacion();
     Sanctum::actingAs($usuario);
-    $this->postJson('/api/v1/dispensaciones', $cuerpo)->assertCreated();
+    $this->postJson('/api/v1/dispensaciones', $cuerpo, cabecerasDispensacion())->assertCreated();
     expect(rn03ConcStockDe($existencia))->toBe(2);
     rn03ConcAfirmarCadena($existencia, 'tras quitar el fallo');
 })->group('concurrencia');

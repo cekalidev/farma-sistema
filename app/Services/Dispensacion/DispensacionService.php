@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Dispensacion;
 
 use App\Enums\EstadoDispensacion;
+use App\Exceptions\Dominio\IdempotencyKeyReutilizada;
 use App\Exceptions\Dominio\PrescripcionNoCorresponde;
 use App\Exceptions\Dominio\StockInsuficiente;
+use App\Exceptions\ErroresBaseDatos;
+use App\Models\Bodega;
 use App\Models\Dispensacion;
 use App\Models\DispensacionItem;
 use App\Models\Existencia;
@@ -14,85 +17,143 @@ use App\Models\Prescripcion;
 use App\Models\PrescripcionItem;
 use App\Services\Inventario\ConsultaKardexService;
 use App\Support\Negocio;
+use Closure;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Dispensación (RN-02): crea la dispensación y descuenta stock FEFO (SalidaStock), o calcula la
  * asignación sin efectos (previsualizar, RN-02-AC6).
  *
+ * RN-09 idempotencia: la creación guarda, en la misma transacción, la Idempotency-Key, el hash
+ * canónico del cuerpo y la respuesta enviada; un reintento del mismo usuario con la misma clave
+ * la reproduce (mismo hash) o responde 422 IDEMPOTENCY_KEY_REUTILIZADA (otro hash). Ver crear().
+ *
  * Reglas que llegan en commits posteriores (puntos marcados con "RN-0x:" abajo):
- *  - RN-09 idempotencia (Idempotency-Key + request_hash; UNIQUE(dispensado_por_id, idempotency_key)).
  *  - RN-04 vigencia de la prescripción (S-05) y tope acumulado por ítem, con lockForUpdate de los
  *    prescripcion_items.
  *  - RN-05 control especial: PENDIENTE_AUTORIZACION sin mover stock (S-06).
  */
 final class DispensacionService
 {
+    /** Índice único (dispensado_por_id, idempotency_key) de create_dispensaciones_table. */
+    public const INDICE_IDEMPOTENCIA = 'dispensaciones_usuario_idempotency_unique';
+
+    /** Mismo texto para bodega inexistente (Form Request) e inactiva (aquí), S-46. */
+    public const MENSAJE_BODEGA_NO_DISPONIBLE = 'La bodega no existe o está inactiva.';
+
     public function __construct(
         private readonly SalidaStock $salida,
         private readonly AsignadorFefo $asignador,
     ) {}
 
     /**
+     * Crea la dispensación (RN-02) de forma idempotente (RN-09) y devuelve la respuesta a enviar.
+     *
+     * Orden (RN-09-AC6): 1) si el usuario ya tiene una dispensación con esa clave, se resuelve sin
+     * transacción (reproducir o 422) y sin revalidar prescripción ni stock, para que un reintento
+     * no cambie de resultado aunque el estado haya cambiado (AC8). 2) Si no, en una transacción se
+     * inserta la cabecera con la clave ANTES de bloquear existencias: un reintento simultáneo
+     * espera en el índice único dispensaciones_usuario_idempotency_unique sin tener bloqueado
+     * nada, y cuando la primera confirma recibe 23505; su transacción (o savepoint) se revierte
+     * entera y se lee la ganadora fuera de ella. Si la primera se revierte (409/422), la segunda
+     * inserta y se procesa de nuevo (los fallos no se guardan, S-11, AC7).
+     *
+     * @param  Closure(Dispensacion): RespuestaIdempotente  $responder  respuesta de la creación
+     *                                                                  (se guarda tal cual)
+     *
+     * @throws IdempotencyKeyReutilizada (422, sin cambios)
+     * @throws ValidationException (422 VALIDACION, bodega inactiva en una dispensación nueva, S-46)
      * @throws PrescripcionNoCorresponde (422)
      * @throws StockInsuficiente (409, sin cambios)
      */
-    public function crear(DatosDispensacion $datos): Dispensacion
+    public function crear(DatosDispensacion $datos, ClaveIdempotencia $clave, Closure $responder): RespuestaIdempotente
     {
+        $previa = $this->porClave($datos->usuarioId, $clave->clave);
+
+        if ($previa !== null) {
+            return $this->reproducir($previa, $clave);
+        }
+
+        // S-46 solo para una dispensación nueva: el reintento ya se resolvió arriba (S-52).
+        $this->exigirBodegaActiva($datos->bodegaId);
+
         $hoy = Negocio::hoy();
 
-        $dispensacion = DB::transaction(function () use ($datos, $hoy): Dispensacion {
-            // RN-09: aquí irá la idempotencia. La clave (Idempotency-Key) y el hash canónico del
-            // cuerpo se guardan en esta misma inserción; la carrera entre reintentos la resuelve
-            // UNIQUE(dispensado_por_id, idempotency_key), no un exists() previo (S-10, S-11).
-            $prescritos = $this->itemsPrescritos($datos);
+        try {
+            return DB::transaction(function () use ($datos, $clave, $responder, $hoy): RespuestaIdempotente {
+                // Solo lecturas sin bloqueo: valida la correspondencia antes de insertar (las FK
+                // compuestas darían 500 en vez de 422).
+                $prescritos = $this->itemsPrescritos($datos);
 
-            // RN-04: aquí irá, con los prescripcion_items bloqueados (lockForUpdate, orden por id),
-            // la vigencia (PRESCRIPCION_NO_VIGENTE, S-05) y el tope acumulado por ítem
-            // (CANTIDAD_EXCEDE_PRESCRITO, sumando CONFIRMADA + PENDIENTE_AUTORIZACION).
+                // RN-05: aquí irá requiereAutorizacion(items): si algún producto es de control especial,
+                // la dispensación nace PENDIENTE_AUTORIZACION y NO se llama a SalidaStock (S-06).
 
-            // RN-05: aquí irá requiereAutorizacion(items): si algún producto es de control especial,
-            // la dispensación nace PENDIENTE_AUTORIZACION y NO se llama a SalidaStock (S-06).
-            $dispensacion = new Dispensacion;
-            $dispensacion->forceFill([
-                'paciente_id' => $datos->pacienteId,
-                'prescripcion_id' => $datos->prescripcionId,
-                'bodega_id' => $datos->bodegaId,
-                'dispensado_por_id' => $datos->usuarioId,
-                'estado' => EstadoDispensacion::Confirmada,
-            ])->save();
-
-            foreach ($datos->items as $solicitado) {
-                $prescrito = $prescritos[$solicitado->prescripcionItemId];
-
-                $item = new DispensacionItem;
-                $item->forceFill([
-                    'dispensacion_id' => $dispensacion->id,
-                    'prescripcion_id' => $prescrito->prescripcion_id,
-                    'prescripcion_item_id' => $prescrito->id,
-                    'producto_id' => $prescrito->producto_id,
-                    'cantidad' => $solicitado->cantidad,
+                // Idempotencia (RN-09-AC6): primera escritura, antes de cualquier bloqueo.
+                $dispensacion = new Dispensacion;
+                $dispensacion->forceFill([
+                    'paciente_id' => $datos->pacienteId,
+                    'prescripcion_id' => $datos->prescripcionId,
+                    'bodega_id' => $datos->bodegaId,
+                    'dispensado_por_id' => $datos->usuarioId,
+                    'estado' => EstadoDispensacion::Confirmada,
+                    'idempotency_key' => $clave->clave,
+                    'request_hash' => $clave->hash,
                 ])->save();
+
+                // RN-04: aquí irá, con los prescripcion_items bloqueados (lockForUpdate, orden por id;
+                // siempre DESPUÉS de insertar la cabecera, RN-09-AC6), la vigencia
+                // (PRESCRIPCION_NO_VIGENTE, S-05) y el tope acumulado por ítem
+                // (CANTIDAD_EXCEDE_PRESCRITO, sumando CONFIRMADA + PENDIENTE_AUTORIZACION).
+
+                foreach ($datos->items as $solicitado) {
+                    $prescrito = $prescritos[$solicitado->prescripcionItemId];
+
+                    $item = new DispensacionItem;
+                    $item->forceFill([
+                        'dispensacion_id' => $dispensacion->id,
+                        'prescripcion_id' => $prescrito->prescripcion_id,
+                        'prescripcion_item_id' => $prescrito->id,
+                        'producto_id' => $prescrito->producto_id,
+                        'cantidad' => $solicitado->cantidad,
+                    ])->save();
+                }
+
+                $this->salida->descontar($dispensacion, $datos->usuarioId, $hoy);
+
+                // La respuesta se guarda en la misma transacción: nunca hay una dispensación con
+                // clave confirmada cuya respuesta no se pueda reproducir.
+                $respuesta = $responder($this->cargar($dispensacion));
+                $dispensacion->forceFill([
+                    'respuesta_status' => $respuesta->status,
+                    'respuesta_cuerpo' => $respuesta->cuerpo,
+                ])->save();
+
+                return $respuesta;
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            if (! ErroresBaseDatos::violaIndiceUnico($e, self::INDICE_IDEMPOTENCIA)) {
+                throw $e;
             }
 
-            $this->salida->descontar($dispensacion, $datos->usuarioId, $hoy);
-
-            return $dispensacion;
-        });
-
-        return $this->cargar($dispensacion);
+            return $this->reproducir($this->porClave($datos->usuarioId, $clave->clave) ?? throw $e, $clave);
+        }
     }
 
     /**
      * RN-02-AC6: la misma asignación FEFO que haría crear(), sin bloquear ni escribir. Orientativa:
      * entre la previsualización y la dispensación otra operación puede cambiar el stock.
      *
+     * @throws ValidationException (422 VALIDACION, bodega inactiva, S-46)
      * @throws PrescripcionNoCorresponde (422)
      * @throws StockInsuficiente (409)
      */
     public function previsualizar(DatosDispensacion $datos): Previsualizacion
     {
+        $this->exigirBodegaActiva($datos->bodegaId);
+
         $hoy = Negocio::hoy();
         $prescritos = $this->itemsPrescritos($datos);
 
@@ -187,6 +248,47 @@ final class DispensacionService
         }
 
         return $tramos;
+    }
+
+    /**
+     * S-46: no se dispensa (ni se previsualiza) desde una bodega inactiva → 422 VALIDACION con
+     * bodega_id en detalles.campos, el mismo formato que un fallo del Form Request. Que exista ya
+     * lo validó el Form Request.
+     *
+     * @throws ValidationException
+     */
+    private function exigirBodegaActiva(int $bodegaId): void
+    {
+        if (! Bodega::query()->whereKey($bodegaId)->where('activa', true)->exists()) {
+            throw ValidationException::withMessages(['bodega_id' => self::MENSAJE_BODEGA_NO_DISPONIBLE]);
+        }
+    }
+
+    private function porClave(int $usuarioId, string $clave): ?Dispensacion
+    {
+        return Dispensacion::query()
+            ->where('dispensado_por_id', $usuarioId)
+            ->where('idempotency_key', $clave)
+            ->first();
+    }
+
+    /**
+     * RN-09-AC1/AC8: la respuesta original, tal cual se envió (aunque la dispensación cambiara
+     * después). Otro cuerpo con la misma clave → 422 (AC2, S-10).
+     *
+     * @throws IdempotencyKeyReutilizada
+     */
+    private function reproducir(Dispensacion $previa, ClaveIdempotencia $clave): RespuestaIdempotente
+    {
+        if (! hash_equals((string) $previa->request_hash, $clave->hash)) {
+            throw new IdempotencyKeyReutilizada;
+        }
+
+        if ($previa->respuesta_status === null || $previa->respuesta_cuerpo === null) {
+            throw new \LogicException("La dispensación {$previa->id} tiene Idempotency-Key pero no respuesta guardada.");
+        }
+
+        return new RespuestaIdempotente($previa->respuesta_status, $previa->respuesta_cuerpo, reproducida: true);
     }
 
     /** Relaciones que muestra DispensacionResource (columnas mínimas, sin N+1). */

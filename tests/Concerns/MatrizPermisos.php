@@ -28,7 +28,8 @@ use Illuminate\Testing\TestResponse;
  * Forma de cada entrada (clave = "MÉTODO /uri" legible):
  *  - metodo      string                       GET | POST | PUT | PATCH | DELETE
  *  - uri         string                       ruta concreta (sin parámetros) …
- *  - preparar    ?Closure(): array            … o datos a crear antes: devuelve ['uri' => …, 'cuerpo' => […]]
+ *  - preparar    ?Closure(): array            … o datos a crear antes: devuelve ['uri' => …, 'cuerpo' => […],
+ *                                             'cabeceras' => […]] (cabeceras opcionales, p. ej. Idempotency-Key)
  *  - permitidos  list<string>                 valores de App\Enums\Rol con permiso según la spec
  *  - instantanea ?Closure(): mixed            estado de BD a comparar: en 403/401 debe quedar igual
  *  - verificar   ?Closure(TestResponse, mixed $antes, User $usuario): void
@@ -267,6 +268,8 @@ final class MatrizPermisos
                 'preparar' => fn (): array => [
                     'uri' => '/api/v1/dispensaciones',
                     'cuerpo' => self::cuerpoDispensacion(20, 3),
+                    // RN-09-AC3: obligatoria al crear; una nueva por petición.
+                    'cabeceras' => cabecerasDispensacion(),
                 ],
                 'permitidos' => ['auxiliar_farmacia', 'regente_farmacia'],
                 'instantanea' => fn (): array => [
@@ -404,9 +407,9 @@ final class MatrizPermisos
     }
 
     /**
-     * Ejecuta la preparación del endpoint y devuelve [uri, cuerpo].
+     * Ejecuta la preparación del endpoint y devuelve [uri, cuerpo, cabeceras].
      *
-     * @return array{0: string, 1: array<string, mixed>}
+     * @return array{0: string, 1: array<string, mixed>, 2: array<string, string>}
      */
     public static function preparar(string $clave): array
     {
@@ -416,6 +419,7 @@ final class MatrizPermisos
         return [
             $preparado['uri'] ?? $def['uri'],
             $preparado['cuerpo'] ?? [],
+            $preparado['cabeceras'] ?? [],
         ];
     }
 

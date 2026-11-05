@@ -128,10 +128,14 @@ function rn02Cuerpo(int $bodegaId, array $items): array
     ];
 }
 
-/** @param array<string, mixed> $cuerpo */
+/**
+ * Una Idempotency-Key nueva por petición (RN-09; la previsualización la ignora).
+ *
+ * @param  array<string, mixed>  $cuerpo
+ */
 function rn02Post(string $uri, array $cuerpo): TestResponse
 {
-    return test()->postJson($uri, $cuerpo, [], JSON_PRESERVE_ZERO_FRACTION);
+    return test()->postJson($uri, $cuerpo, cabecerasDispensacion(), JSON_PRESERVE_ZERO_FRACTION);
 }
 
 /** Dispensa un solo producto. */
