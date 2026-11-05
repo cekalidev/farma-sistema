@@ -7,9 +7,11 @@ namespace Tests\Concerns;
 use App\Enums\Rol;
 use App\Enums\TipoMovimiento;
 use App\Models\Bodega;
+use App\Models\Dispensacion;
 use App\Models\Existencia;
 use App\Models\Lote;
 use App\Models\MovimientoKardex;
+use App\Models\PrescripcionItem;
 use App\Models\Producto;
 use App\Models\User;
 use App\Services\Inventario\RegistradorKardex;
@@ -259,6 +261,56 @@ final class MatrizPermisos
                 },
             ],
 
+            // --- RN-02: dispensación FEFO (dispensacion.crear: auxiliar y regente) ---------------
+            'POST /api/v1/dispensaciones' => [
+                'metodo' => 'POST',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/dispensaciones',
+                    'cuerpo' => self::cuerpoDispensacion(20, 3),
+                ],
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia'],
+                'instantanea' => fn (): array => [
+                    Dispensacion::query()->count(),
+                    MovimientoKardex::query()->count(),
+                    (int) Existencia::query()->sum('cantidad'),
+                ],
+                'verificar' => function (TestResponse $r, mixed $antes, User $usuario): void {
+                    $r->assertCreated();
+                    $datos = cuerpoDatos($r);
+                    expect($datos['estado'] ?? null)->toBe('CONFIRMADA')
+                        ->and($datos['dispensado_por_id'] ?? null)->toBe($usuario->id)
+                        ->and($r->json('data.detalles'))->toHaveCount(1)
+                        ->and($r->json('data.detalles.0.cantidad'))->toBe(3)
+                        ->and($r->json('data.detalles.0.movimiento.tipo'))->toBe('SALIDA_DISPENSACION')
+                        ->and(Dispensacion::query()->count())->toBe($antes[0] + 1)
+                        ->and(MovimientoKardex::query()->count())->toBe($antes[1] + 1)
+                        ->and((int) Existencia::query()->sum('cantidad'))->toBe($antes[2] - 3);
+                },
+            ],
+            'POST /api/v1/dispensaciones/previsualizar' => [
+                'metodo' => 'POST',
+                'preparar' => fn (): array => [
+                    'uri' => '/api/v1/dispensaciones/previsualizar',
+                    'cuerpo' => self::cuerpoDispensacion(20, 3),
+                ],
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia'],
+                'instantanea' => fn (): array => [
+                    Dispensacion::query()->count(),
+                    MovimientoKardex::query()->count(),
+                    (int) Existencia::query()->sum('cantidad'),
+                ],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data.detalles'))->toHaveCount(1)
+                        ->and($r->json('data.detalles.0.cantidad'))->toBe(3)
+                        ->and([
+                            Dispensacion::query()->count(),
+                            MovimientoKardex::query()->count(),
+                            (int) Existencia::query()->sum('cantidad'),
+                        ])->toBe($antes);
+                },
+            ],
+
             // --- RN-xx: añadir aquí los endpoints de cada RN siguiente ------------------------
         ];
     }
@@ -278,6 +330,25 @@ final class MatrizPermisos
         });
 
         return $existencia->refresh();
+    }
+
+    /**
+     * Cuerpo de dispensación válido: una existencia vigente con `stock` unidades (con su ENTRADA en
+     * kardex) y una prescripción vigente con un ítem de ese producto.
+     *
+     * @return array<string, mixed>
+     */
+    private static function cuerpoDispensacion(int $stock, int $cantidad): array
+    {
+        $existencia = self::existenciaConKardex($stock);
+        $item = PrescripcionItem::factory()->create(['producto_id' => $existencia->producto_id, 'cantidad' => 30]);
+
+        return [
+            'paciente_id' => $item->prescripcion->paciente_id,
+            'prescripcion_id' => $item->prescripcion_id,
+            'bodega_id' => $existencia->bodega_id,
+            'items' => [['prescripcion_item_id' => $item->id, 'cantidad' => $cantidad]],
+        ];
     }
 
     /** @return array<string, array<string, mixed>> */

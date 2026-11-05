@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodegaController;
+use App\Http\Controllers\Api\V1\DispensacionController;
 use App\Http\Controllers\Api\V1\InventarioController;
 use App\Http\Controllers\Api\V1\KardexController;
 use App\Http\Controllers\Api\V1\ProductoController;
 use App\Models\Bodega;
+use App\Models\Dispensacion;
 use App\Models\Existencia;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
@@ -39,5 +41,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('inventario/ajustes', [InventarioController::class, 'storeAjuste'])->can('registrarAjuste', Existencia::class)->name('inventario.ajustes.store');
         Route::get('kardex', [KardexController::class, 'index'])->can('viewAny', MovimientoKardex::class)->name('kardex.index');
         Route::get('kardex/{movimiento}', [KardexController::class, 'show'])->can('view', 'movimiento')->name('kardex.show');
+
+        // RN-02 dispensación FEFO: dispensacion.crear (auxiliar, regente). Previsualizar no cambia stock ni kardex.
+        Route::post('dispensaciones/previsualizar', [DispensacionController::class, 'previsualizar'])->can('create', Dispensacion::class)->name('dispensaciones.previsualizar');
+        Route::post('dispensaciones', [DispensacionController::class, 'store'])->can('create', Dispensacion::class)->name('dispensaciones.store');
     });
 });
