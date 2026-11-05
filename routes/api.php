@@ -2,15 +2,18 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodegaController;
+use App\Http\Controllers\Api\V1\DiscrepanciaController;
 use App\Http\Controllers\Api\V1\DispensacionController;
 use App\Http\Controllers\Api\V1\InventarioController;
 use App\Http\Controllers\Api\V1\KardexController;
 use App\Http\Controllers\Api\V1\ProductoController;
+use App\Http\Controllers\Api\V1\TrasladoController;
 use App\Models\Bodega;
 use App\Models\Dispensacion;
 use App\Models\Existencia;
 use App\Models\MovimientoKardex;
 use App\Models\Producto;
+use App\Models\Traslado;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
@@ -49,5 +52,21 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // RN-05 control especial: dispensacion.autorizar (regente) y distinto de quien la creó (Policy + servicio).
         Route::post('dispensaciones/{dispensacion}/autorizar', [DispensacionController::class, 'autorizar'])->can('autorizar', 'dispensacion')->name('dispensaciones.autorizar');
         Route::post('dispensaciones/{dispensacion}/rechazar', [DispensacionController::class, 'rechazar'])->can('rechazar', 'dispensacion')->name('dispensaciones.rechazar');
+
+        // RN-07 traslados: consultar (auxiliar, regente, auditor); crear/despachar/recibir con
+        // traslado.operar; editar ítems y solicitar solo el creador (S-08); aprobar con
+        // traslado.aprobar (RN-08 añade la segregación); anular el creador o un regente.
+        Route::get('traslados', [TrasladoController::class, 'index'])->can('viewAny', Traslado::class)->name('traslados.index');
+        Route::post('traslados', [TrasladoController::class, 'store'])->can('create', Traslado::class)->name('traslados.store');
+        Route::get('traslados/{traslado}', [TrasladoController::class, 'show'])->can('view', 'traslado')->name('traslados.show');
+        Route::put('traslados/{traslado}/items', [TrasladoController::class, 'updateItems'])->can('editarItems', 'traslado')->name('traslados.items.update');
+        Route::post('traslados/{traslado}/solicitar', [TrasladoController::class, 'solicitar'])->can('solicitar', 'traslado')->name('traslados.solicitar');
+        Route::post('traslados/{traslado}/aprobar', [TrasladoController::class, 'aprobar'])->can('aprobar', 'traslado')->name('traslados.aprobar');
+        Route::post('traslados/{traslado}/despachar', [TrasladoController::class, 'despachar'])->can('despachar', 'traslado')->name('traslados.despachar');
+        Route::post('traslados/{traslado}/recibir', [TrasladoController::class, 'recibir'])->can('recibir', 'traslado')->name('traslados.recibir');
+        Route::post('traslados/{traslado}/anular', [TrasladoController::class, 'anular'])->can('anular', 'traslado')->name('traslados.anular');
+
+        // RN-07-AC12: resolver discrepancias con traslado.aprobar (regente).
+        Route::post('discrepancias/{discrepancia}/resolver', [DiscrepanciaController::class, 'resolver'])->can('resolver', 'discrepancia')->name('discrepancias.resolver');
     });
 });

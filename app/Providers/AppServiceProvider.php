@@ -42,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         'prescripcion',
         'dispensacion',
         'traslado',
+        'discrepancia',
         'usuario',
         'id',
     ];

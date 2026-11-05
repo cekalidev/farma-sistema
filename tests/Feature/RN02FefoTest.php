@@ -1115,6 +1115,16 @@ describe('RN-02 supuestos de la dispensación', function () {
 
             return $c;
         }, 'items.1.prescripcion_item_id'],
+        'prescripcion_item_id repetido con otro tipo JSON (cadena)' => [function (array $c): array {
+            $c['items'][1]['prescripcion_item_id'] = (string) $c['items'][0]['prescripcion_item_id'];
+
+            return $c;
+        }, 'items.1.prescripcion_item_id'],
+        'prescripcion_item_id repetido con otro tipo JSON (decimal)' => [function (array $c): array {
+            $c['items'][1]['prescripcion_item_id'] = (float) $c['items'][0]['prescripcion_item_id'];
+
+            return $c;
+        }, 'items.1.prescripcion_item_id'],
         'clave extra producto_id' => [function (array $c): array {
             $c['items'][0]['producto_id'] = Producto::query()->value('id');
 

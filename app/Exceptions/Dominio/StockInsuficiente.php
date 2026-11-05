@@ -21,6 +21,21 @@ final class StockInsuficiente extends ExcepcionDominio
     }
 
     /**
+     * RN-07-AC10: el origen no tiene `solicitado` unidades del lote del ítem al despachar.
+     * `existencia_id` es null si la bodega origen no tiene existencia de ese lote.
+     */
+    public static function paraItemTraslado(int $trasladoItemId, int $loteId, ?int $existenciaId, int $disponible, int $solicitado): self
+    {
+        return new self('', [
+            'traslado_item_id' => $trasladoItemId,
+            'lote_id' => $loteId,
+            'existencia_id' => $existenciaId,
+            'disponible' => $disponible,
+            'solicitado' => $solicitado,
+        ]);
+    }
+
+    /**
      * FEFO (RN-01-AC5, RN-03-AC2, S-02): `disponible` es el stock vigente (no vencido) y
      * `vencido_no_dispensable` el que existe pero no puede dispensarse (vence hoy o antes).
      */
