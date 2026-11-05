@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Catalogos\IndexBodegaRequest;
 use App\Http\Requests\Catalogos\StoreBodegaRequest;
 use App\Http\Resources\BodegaResource;
 use App\Models\Bodega;
@@ -16,9 +17,9 @@ class BodegaController extends Controller
 {
     public function __construct(private readonly BodegaService $bodegas) {}
 
-    public function index(): AnonymousResourceCollection
+    public function index(IndexBodegaRequest $request): AnonymousResourceCollection
     {
-        return BodegaResource::collection($this->bodegas->listar());
+        return BodegaResource::collection($this->bodegas->listar($request->porPagina()));
     }
 
     public function store(StoreBodegaRequest $request): JsonResponse

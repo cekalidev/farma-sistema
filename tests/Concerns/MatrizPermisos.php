@@ -19,6 +19,7 @@ use App\Models\MovimientoKardex;
 use App\Models\Paciente;
 use App\Models\PrescripcionItem;
 use App\Models\Producto;
+use App\Models\StockMinimo;
 use App\Models\Traslado;
 use App\Models\User;
 use App\Services\Auditoria\Bitacora;
@@ -646,6 +647,54 @@ final class MatrizPermisos
                         ->and($r->json('data.0.accion'))->toBe('TRASLADO_ANULAR')
                         ->and($r->json('meta.total'))->toBe(1)
                         ->and(AuditoriaAcceso::query()->count())->toBe($antes);
+                },
+            ],
+
+            // --- RN-11: alertas (inventario.consultar: auxiliar, regente, auditor) -------------
+            'GET /api/v1/alertas/vencimientos' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $bodega = Bodega::factory()->create();
+                    $porVencer = Lote::factory()->venceEn(10)->create();
+                    $vencido = Lote::factory()->vencido()->create();
+                    Existencia::factory()->paraLote($porVencer)->create(['bodega_id' => $bodega->id, 'cantidad' => 5]);
+                    Existencia::factory()->paraLote($vencido)->create(['bodega_id' => $bodega->id, 'cantidad' => 3]);
+                    Existencia::factory()->create(['bodega_id' => $bodega->id]); // vigente: no alerta
+                    Existencia::factory()->paraLote(Lote::factory()->venceEn(5)->create())->create(); // otra bodega
+
+                    return ['uri' => '/api/v1/alertas/vencimientos?bodega_id='.$bodega->id];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): array => [Existencia::query()->count(), (int) Existencia::query()->sum('cantidad')],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toBeArray()->toHaveCount(2)
+                        ->and($r->json('data.0.tipo'))->toBe('VENCIDO')
+                        ->and($r->json('data.1.tipo'))->toBe('POR_VENCER')
+                        ->and($r->json('data.1.dias_restantes'))->toBe(10)
+                        ->and([Existencia::query()->count(), (int) Existencia::query()->sum('cantidad')])->toBe($antes);
+                },
+            ],
+            'GET /api/v1/alertas/stock-minimo' => [
+                'metodo' => 'GET',
+                'preparar' => function (): array {
+                    $bodega = Bodega::factory()->create();
+                    $lote = Lote::factory()->create();
+                    Existencia::factory()->paraLote($lote)->create(['bodega_id' => $bodega->id, 'cantidad' => 19]);
+                    StockMinimo::factory()->create(['bodega_id' => $bodega->id, 'producto_id' => $lote->producto_id, 'cantidad_minima' => 20]);
+                    StockMinimo::factory()->create(['cantidad_minima' => 5]); // otra bodega
+
+                    return ['uri' => '/api/v1/alertas/stock-minimo?bodega_id='.$bodega->id];
+                },
+                'permitidos' => ['auxiliar_farmacia', 'regente_farmacia', 'auditor'],
+                'instantanea' => fn (): array => [StockMinimo::query()->count(), (int) Existencia::query()->sum('cantidad')],
+                'verificar' => function (TestResponse $r, mixed $antes): void {
+                    $r->assertOk();
+                    expect($r->json('data'))->toBeArray()->toHaveCount(1)
+                        ->and($r->json('data.0.minimo'))->toBe(20)
+                        ->and($r->json('data.0.actual'))->toBe(19)
+                        ->and($r->json('data.0.faltante'))->toBe(1)
+                        ->and([StockMinimo::query()->count(), (int) Existencia::query()->sum('cantidad')])->toBe($antes);
                 },
             ],
 

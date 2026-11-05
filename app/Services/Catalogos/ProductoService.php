@@ -15,9 +15,9 @@ final class ProductoService
     /**
      * @return LengthAwarePaginator<int, Producto>
      */
-    public function listar(int $porPagina = 25): LengthAwarePaginator
+    public function listar(int $porPagina): LengthAwarePaginator
     {
-        return Producto::query()->orderBy('nombre')->paginate($porPagina);
+        return Producto::query()->orderBy('nombre')->orderBy('id')->paginate($porPagina);
     }
 
     /**

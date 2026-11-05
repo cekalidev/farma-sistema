@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Catalogos\IndexProductoRequest;
 use App\Http\Requests\Catalogos\StoreProductoRequest;
 use App\Http\Resources\ProductoResource;
 use App\Models\Producto;
@@ -16,9 +17,9 @@ class ProductoController extends Controller
 {
     public function __construct(private readonly ProductoService $productos) {}
 
-    public function index(): AnonymousResourceCollection
+    public function index(IndexProductoRequest $request): AnonymousResourceCollection
     {
-        return ProductoResource::collection($this->productos->listar());
+        return ProductoResource::collection($this->productos->listar($request->porPagina()));
     }
 
     public function store(StoreProductoRequest $request): JsonResponse

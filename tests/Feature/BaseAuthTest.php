@@ -347,6 +347,85 @@ describe('BASE-AC4 matriz rol × endpoint', function () {
     });
 });
 
+describe('BASE-AC4 S-88 paginación de bodegas y productos', function () {
+    dataset('base_catalogos_listados', [
+        'bodegas' => ['/api/v1/bodegas', Bodega::class],
+        'productos' => ['/api/v1/productos', Producto::class],
+    ]);
+
+    it('BASE-AC4 S-88: sin por_pagina devuelve 25 por página y el total real', function (string $uri, string $modelo) {
+        actuarComo('admin');
+        $modelo::factory()->count(30)->create();
+
+        $r = $this->getJson($uri);
+
+        $r->assertOk();
+        expect($r->json('data'))->toHaveCount(25)
+            ->and($r->json('meta.per_page'))->toBe(25)
+            ->and($r->json('meta.total'))->toBe(30)
+            ->and($r->json('meta.last_page'))->toBe(2);
+    })->with('base_catalogos_listados');
+
+    it('BASE-AC4 S-88: por_pagina admite los extremos 1 y 100', function (string $uri, string $modelo, int $porPagina, int $esperadas) {
+        actuarComo('admin');
+        $modelo::factory()->count(101)->create();
+
+        $r = $this->getJson($uri.'?por_pagina='.$porPagina);
+
+        $r->assertOk();
+        expect($r->json('data'))->toHaveCount($esperadas)
+            ->and($r->json('meta.per_page'))->toBe($porPagina)
+            ->and($r->json('meta.total'))->toBe(101);
+    })->with('base_catalogos_listados')->with([
+        'mínimo (1)' => [1, 1],
+        'máximo (100)' => [100, 100],
+    ]);
+
+    it('BASE-AC4 S-88: por_pagina o page fuera de rango o mal formados → 422 VALIDACION con detalles.campos (nunca 500) y sin cambios', function (string $uri, string $modelo, string $campo, string $valor) {
+        actuarComo('admin');
+        $modelo::factory()->count(2)->create();
+        $antes = $modelo::query()->count();
+
+        $r = $this->getJson($uri.'?'.http_build_query([$campo => $valor]));
+
+        esperarError($r, 422, 'VALIDACION');
+        expect($r->json('error.detalles.campos'))->toHaveKey($campo)
+            ->and($modelo::query()->count())->toBe($antes);
+    })->with('base_catalogos_listados')->with([
+        'por_pagina 0' => ['por_pagina', '0'],
+        'por_pagina 101' => ['por_pagina', '101'],
+        'por_pagina no numérico' => ['por_pagina', 'abc'],
+        'page 0' => ['page', '0'],
+        'page 1.000.001' => ['page', '1000001'],
+        'page decimal' => ['page', '1.5'],
+    ]);
+
+    it('BASE-AC4 S-88: page 1.000.000 es válida y, vacía, responde 200 con data vacío', function (string $uri, string $modelo) {
+        actuarComo('admin');
+        $modelo::factory()->count(2)->create();
+
+        $r = $this->getJson($uri.'?page=1000000');
+
+        $r->assertOk();
+        expect($r->json('data'))->toBe([])
+            ->and($r->json('meta.total'))->toBe(2);
+    })->with('base_catalogos_listados');
+
+    it('BASE-AC4 S-88: con nombres repetidos la paginación es estable (orden por nombre e id, sin repetir ni perder registros)', function () {
+        actuarComo('admin');
+        $ids = Producto::factory()->count(3)->create(['nombre' => 'Producto repetido'])->pluck('id')->sort()->values()->all();
+
+        $vistos = [];
+        foreach ([1, 2, 3] as $pagina) {
+            $r = $this->getJson('/api/v1/productos?por_pagina=1&page='.$pagina);
+            $r->assertOk();
+            $vistos[] = $r->json('data.0.id');
+        }
+
+        expect($vistos)->toBe($ids);
+    });
+});
+
 describe('BASE-AC2 login: correo normalizado, límites de intentos y contrato del token', function () {
     it('BASE-AC2: un usuario registrado con mayúsculas y espacios se guarda en minúsculas y entra con cualquier variante', function (string $correoLogin) {
         $usuario = usuarioConClave('regente_farmacia', '  Regente.Mayus@Farma.TEST ');

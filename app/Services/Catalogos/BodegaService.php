@@ -15,9 +15,9 @@ final class BodegaService
     /**
      * @return LengthAwarePaginator<int, Bodega>
      */
-    public function listar(int $porPagina = 25): LengthAwarePaginator
+    public function listar(int $porPagina): LengthAwarePaginator
     {
-        return Bodega::query()->orderBy('nombre')->paginate($porPagina);
+        return Bodega::query()->orderBy('nombre')->orderBy('id')->paginate($porPagina);
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Habilidad;
+use App\Http\Controllers\Api\V1\AlertaController;
 use App\Http\Controllers\Api\V1\AuditoriaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BodegaController;
@@ -48,6 +50,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('inventario/ajustes', [InventarioController::class, 'storeAjuste'])->can('registrarAjuste', Existencia::class)->name('inventario.ajustes.store');
         Route::get('kardex', [KardexController::class, 'index'])->can('viewAny', MovimientoKardex::class)->name('kardex.index');
         Route::get('kardex/{movimiento}', [KardexController::class, 'show'])->can('view', 'movimiento')->name('kardex.show');
+
+        // RN-11 alertas de vencimiento y stock mínimo: solo lectura con inventario.consultar (auxiliar,
+        // regente, auditor; médico y admin 403, S-13).
+        Route::get('alertas/vencimientos', [AlertaController::class, 'vencimientos'])->can(Habilidad::InventarioConsultar->value)->name('alertas.vencimientos');
+        Route::get('alertas/stock-minimo', [AlertaController::class, 'stockMinimo'])->can(Habilidad::InventarioConsultar->value)->name('alertas.stock-minimo');
 
         // RN-02 dispensación FEFO: dispensacion.crear (auxiliar, regente). Previsualizar no cambia stock ni kardex.
         Route::post('dispensaciones/previsualizar', [DispensacionController::class, 'previsualizar'])->can('create', Dispensacion::class)->name('dispensaciones.previsualizar');
